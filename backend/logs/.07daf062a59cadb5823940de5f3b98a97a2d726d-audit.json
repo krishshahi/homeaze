@@ -1,0 +1,25 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\User\\Desktop\\Neha\\homeaze-platform\\backend\\logs\\.07daf062a59cadb5823940de5f3b98a97a2d726d-audit.json",
+    "files": [
+        {
+            "date": 1754569468575,
+            "name": "C:\\Users\\User\\Desktop\\Neha\\homeaze-platform\\backend\\logs\\application-2025-08-07.log",
+            "hash": "e17cba7936614fbc4681575ec53f3e5099a69c4b9e332d73e190315ec44a925b"
+        },
+        {
+            "date": 1754840737372,
+            "name": "C:\\Users\\User\\Desktop\\Neha\\homeaze-platform\\backend\\logs\\application-2025-08-10.log",
+            "hash": "1b87d645ae4616f5b41ddf6082148a9f9c1f2292fd4fa969f564ad5025e715d7"
+        },
+        {
+            "date": 1754849841393,
+            "name": "C:\\Users\\User\\Desktop\\Neha\\homeaze-platform\\backend\\logs\\application-2025-08-11.log",
+            "hash": "ad2b5582bb5a1e027b54669c009e880cb68a4641e975b31b5ac051a75032b113"
+        }
+    ],
+    "hashType": "sha256"
+}
