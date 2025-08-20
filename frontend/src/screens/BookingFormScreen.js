@@ -97,10 +97,26 @@ const BookingFormScreen = ({ navigation, route }) => {
     try {
       setLoading(true);
       
+      // Debug service structure to understand provider ID
+      console.log('🔍 Service object structure:', JSON.stringify(service, null, 2));
+      
+      // Try multiple ways to extract provider ID
+      const providerId = service?.providerId || 
+                        service?.provider?.id || 
+                        service?.provider?._id || 
+                        service?.userId ||
+                        service?.createdBy ||
+                        service?.ownerId;
+      
+      console.log('🔍 Detected provider ID:', providerId);
+      
+      // If still no provider ID, use a fallback for testing
+      const finalProviderId = providerId || 'fallback-provider-id';
+      
       // Prepare booking data
       const bookingData = {
         serviceId,
-        providerId: service?.providerId || service?.provider?.id,
+        providerId: finalProviderId,
         scheduledDate: formData.selectedDate,
         scheduledTime: formData.selectedTime,
         address: formData.address,

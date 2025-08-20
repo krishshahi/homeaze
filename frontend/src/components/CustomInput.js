@@ -203,7 +203,7 @@ const CustomInput = ({
         animated && { transform: [{ scale: scaleAnim }] },
       ]}
     >
-      <View style={[getContainerStyle(), style]}>
+      <View style={[...getContainerStyle(), style]}>
         {gradient && !error && !success ? (
           <LinearGradient
             colors={[COLORS.primaryUltraLight, COLORS.white]}
@@ -258,7 +258,7 @@ const CustomInput = ({
           
           <TextInput
             ref={inputRef}
-            style={[getInputStyle(), inputStyle]}
+            style={[...getInputStyle(), inputStyle]}
             placeholder={!label || (!isFocused && !value) ? placeholder : ''}
             placeholderTextColor={COLORS.textMuted}
             value={value}
