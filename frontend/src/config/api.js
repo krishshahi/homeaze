@@ -132,7 +132,10 @@ export const getHeaders = (authToken = null, contentType = 'application/json') =
   return headers;
 };
 
-// API request wrapper with error handling
+// Import request throttler
+import throttler from '../utils/requestThrottler';
+
+// API request wrapper with error handling and throttling
 export const apiRequest = async (endpoint, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
   
@@ -147,16 +150,8 @@ export const apiRequest = async (endpoint, options = {}) => {
   }
   
   try {
-    console.log(`🌐 API Request: ${config.method} ${url}`);
-    
-    const response = await fetch(url, config);
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Network error' }));
-      throw new Error(errorData.message || `HTTP ${response.status}`);
-    }
-    
-    const data = await response.json();
+    // Use throttler instead of direct fetch to prevent 429 errors
+    const data = await throttler.fetch(url, config);
     console.log(`✅ API Response: ${config.method} ${url}`, data);
     
     return data;

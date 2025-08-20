@@ -87,24 +87,54 @@ const BookingFormScreen = ({ navigation, route }) => {
     handleInputChange('selectedTime', time);
   };
 
-  const handleBookingSubmit = () => {
+  const handleBookingSubmit = async () => {
     // Validate form
     if (!formData.selectedDate || !formData.selectedTime || !formData.address || !formData.contactPhone) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
-    // Show booking confirmation
-    Alert.alert(
-      'Booking Confirmed',
-      'Your service booking has been submitted successfully. The provider will contact you shortly to confirm the details.',
-      [
-        {
-          text: 'OK',
-          onPress: () => navigation.navigate('BookingsMain')
-        }
-      ]
-    );
+    try {
+      setLoading(true);
+      
+      // Prepare booking data
+      const bookingData = {
+        serviceId,
+        providerId: service?.providerId || service?.provider?.id,
+        scheduledDate: formData.selectedDate,
+        scheduledTime: formData.selectedTime,
+        address: formData.address,
+        contactPhone: formData.contactPhone,
+        specialInstructions: formData.specialInstructions,
+        estimatedPrice: service?.startingPrice || service?.price || 0,
+      };
+      
+      console.log('📋 Creating booking with data:', bookingData);
+      
+      // Create booking via API
+      const createdBooking = await BookingsAPI.createBooking(bookingData);
+      
+      // Update Redux state
+      dispatch(createNewBooking(createdBooking));
+      
+      setLoading(false);
+      
+      // Navigate to payment screen
+      navigation.navigate('Payment', {
+        bookingId: createdBooking.id,
+        amount: createdBooking.estimatedPrice || service?.startingPrice || 80,
+        serviceName: service?.title || service?.name || 'Service',
+      });
+      
+    } catch (error) {
+      console.error('❌ Error creating booking:', error);
+      setLoading(false);
+      Alert.alert(
+        'Booking Error',
+        error.message || 'Failed to create booking. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const renderTimeSlots = () => (
@@ -155,15 +185,19 @@ const BookingFormScreen = ({ navigation, route }) => {
           <Text style={styles.summaryTitle}>Service Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Service:</Text>
-            <Text style={styles.summaryValue}>House Cleaning</Text>
+            <Text style={styles.summaryValue}>{service?.title || service?.name || 'Loading...'}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Provider:</Text>
-            <Text style={styles.summaryValue}>CleanPro Services</Text>
+            <Text style={styles.summaryValue}>
+              {service?.provider?.name || service?.provider?.businessName || 'Loading...'}
+            </Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Estimated Price:</Text>
-            <Text style={styles.summaryPrice}>$80</Text>
+            <Text style={styles.summaryPrice}>
+              ${service?.startingPrice || service?.price || '0'}
+            </Text>
           </View>
         </View>
 
@@ -225,7 +259,9 @@ const BookingFormScreen = ({ navigation, route }) => {
       <View style={styles.bottomBar}>
         <View style={styles.totalContainer}>
           <Text style={styles.totalLabel}>Total Estimate</Text>
-          <Text style={styles.totalPrice}>$80</Text>
+          <Text style={styles.totalPrice}>
+            ${service?.startingPrice || service?.price || '0'}
+          </Text>
         </View>
         
         <CustomButton

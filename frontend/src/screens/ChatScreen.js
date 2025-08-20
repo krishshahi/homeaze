@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import { useAppDispatch, useAuth } from '../store/hooks';
+import MessagingAPI from '../services/messagingApi';
 
 const ChatScreen = ({ route, navigation }) => {
   const { chatId, recipientName, recipientId, bookingId } = route.params;
@@ -30,32 +31,76 @@ const ChatScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     loadChatMessages();
+    initializeChat();
     
-    // Simulate real-time message updates
-    const messageInterval = setInterval(() => {
-      if (Math.random() > 0.9) { // 10% chance of receiving a message
-        simulateIncomingMessage();
+    return () => {
+      if (chatId) {
+        MessagingAPI.leaveChat(chatId);
       }
-    }, 5000);
-
-    return () => clearInterval(messageInterval);
+    };
   }, []);
 
+  const initializeChat = async () => {
+    try {
+      // Initialize messaging service with callbacks
+      await MessagingAPI.initialize(
+        handleMessageReceived,
+        handleTypingUpdate
+      );
+      
+      // Join the chat room for real-time updates
+      if (chatId) {
+        MessagingAPI.joinChat(chatId);
+      }
+    } catch (error) {
+      console.error('❌ Error initializing chat:', error);
+    }
+  };
+  
   const loadChatMessages = async () => {
     try {
       setLoading(true);
       
-      // Simulate API call
-      setTimeout(() => {
+      if (chatId) {
+        // Load messages from API
+        const messagesData = await MessagingAPI.getMessages(chatId, {
+          limit: 50,
+          sort: 'asc'
+        });
+        
+        // Format messages for display
+        const formattedMessages = messagesData.messages.map(msg => 
+          MessagingAPI.formatMessage(msg, user.id)
+        );
+        
+        setMessages(formattedMessages);
+        
+        // Mark messages as read
+        await MessagingAPI.markMessagesAsRead(chatId);
+      } else {
+        // Use mock data if no chat ID (for development)
         setMessages(mockMessages);
-        setLoading(false);
-        scrollToBottom();
-      }, 1000);
+      }
+      
+      setLoading(false);
+      scrollToBottom();
       
     } catch (error) {
       console.error('❌ Error loading chat messages:', error);
       setMessages(mockMessages);
       setLoading(false);
+    }
+  };
+  
+  const handleMessageReceived = (message) => {
+    const formattedMessage = MessagingAPI.formatMessage(message, user.id);
+    setMessages(prev => [...prev, formattedMessage]);
+    scrollToBottom();
+  };
+  
+  const handleTypingUpdate = (data) => {
+    if (data.conversationId === chatId && data.userId !== user.id) {
+      setIsTyping(data.isTyping);
     }
   };
 
@@ -85,8 +130,9 @@ const ChatScreen = ({ route, navigation }) => {
   const sendMessage = async () => {
     if (!messageText.trim()) return;
 
+    const tempId = Date.now().toString();
     const newMessage = {
-      id: Date.now().toString(),
+      id: tempId,
       text: messageText.trim(),
       senderId: user.id,
       senderName: user.name,
@@ -97,33 +143,50 @@ const ChatScreen = ({ route, navigation }) => {
     };
 
     setMessages(prev => [...prev, newMessage]);
+    const messageTextToSend = messageText.trim();
     setMessageText('');
     setSending(true);
     scrollToBottom();
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update message status to sent
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === newMessage.id 
-            ? { ...msg, status: 'sent' }
-            : msg
-        )
-      );
+      if (chatId) {
+        // Send via real API
+        const sentMessage = await MessagingAPI.sendMessage(chatId, {
+          text: messageTextToSend,
+          type: 'text'
+        });
+        
+        // Replace temp message with real message from API
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === tempId
+              ? MessagingAPI.formatMessage(sentMessage, user.id)
+              : msg
+          )
+        );
+      } else {
+        // Fallback for development (simulate API)
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === tempId 
+              ? { ...msg, status: 'sent' }
+              : msg
+          )
+        );
+      }
       
     } catch (error) {
       console.error('❌ Error sending message:', error);
       setMessages(prev => 
         prev.map(msg => 
-          msg.id === newMessage.id 
+          msg.id === tempId 
             ? { ...msg, status: 'failed' }
             : msg
         )
       );
-      Alert.alert('Error', 'Failed to send message');
+      Alert.alert('Error', 'Failed to send message. Please try again.');
     } finally {
       setSending(false);
     }

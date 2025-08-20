@@ -1,5 +1,6 @@
 // Services API service
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import throttler from '../utils/requestThrottler';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -39,18 +40,12 @@ class ServicesAPI {
 
       const url = `${API_BASE_URL}/services${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
-      const response = await fetch(url, {
+      const data = await throttler.fetch(url, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch services');
-      }
 
       return data;
     } catch (error) {

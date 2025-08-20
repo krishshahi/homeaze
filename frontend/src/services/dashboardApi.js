@@ -1,5 +1,6 @@
 // Dashboard API Service
 import { apiGet } from '../config/api';
+import throttler from '../utils/requestThrottler';
 
 // Dashboard API endpoints
 const DASHBOARD_ENDPOINTS = {
@@ -94,14 +95,23 @@ export const fetchUserStats = async (token) => {
  */
 export const fetchCompleteDashboardData = async (token) => {
   try {
-    // Fetch all dashboard data in parallel
-    const [overview, analytics, recentBookings, revenueStats, userStats] = await Promise.all([
-      fetchDashboardOverview(token),
-      fetchDashboardAnalytics(token),
-      fetchRecentBookings(token, 5),
-      fetchRevenueStats(token),
-      fetchUserStats(token),
-    ]);
+    // Use staggered batch requests instead of Promise.all to prevent 429 errors
+    const requests = [
+      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.OVERVIEW}`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.ANALYTICS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.RECENT_BOOKINGS}?limit=5`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.REVENUE_STATS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.USER_STATS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
+    ];
+
+    const results = await throttler.batchRequests(requests, 300); // 300ms stagger
+    
+    // Extract successful responses and handle failures gracefully
+    const overview = results[0]?.success ? results[0].data.data : {};
+    const analytics = results[1]?.success ? results[1].data.data : { recentActivity: [] };
+    const recentBookings = results[2]?.success ? results[2].data.data : [];
+    const revenueStats = results[3]?.success ? results[3].data.data : {};
+    const userStats = results[4]?.success ? results[4].data.data : {};
 
     // Transform the data to match frontend expectations
     return {

@@ -51,7 +51,7 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
           startingPrice: data.startingPrice || data.price || 0,
           rating: data.rating || 5,
           featured: !!data.featured,
-          availability: data.availability || 'Available',
+          availability: typeof data.availability === 'object' ? 'Available' : data.availability || 'Available',
           icon: data.icon || '🧰',
           provider: data.provider || { id: data.providerId, name: data.providerName || 'Provider', rating: data.providerRating || 5, reviewCount: data.providerReviewCount || 0 },
           services: data.includedServices || data.services || [],
@@ -80,7 +80,17 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
   }
 
   const handleBookService = () => {
-    navigation.navigate('BookingForm', { service: { id: service.id, name: service.title, provider: service.provider, price: service.startingPrice } });
+    navigation.navigate('BookingForm', { 
+      serviceId: service.id,
+      service: {
+        id: service.id,
+        title: service.title,
+        name: service.title,
+        provider: service.provider,
+        startingPrice: service.startingPrice,
+        price: service.startingPrice
+      }
+    });
   };
 
   const handleProviderPress = () => {
@@ -101,7 +111,9 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
         
         {/* Availability Badge */}
         <View style={styles.availabilityBadge}>
-          <Text style={styles.availabilityText}>{service.availability}</Text>
+          <Text style={styles.availabilityText}>
+            {typeof service.availability === 'object' ? 'Available' : service.availability || 'Available'}
+          </Text>
         </View>
       </View>
     </View>
@@ -125,7 +137,7 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
         <View style={styles.ratingContainer}>
           <Text style={styles.ratingIcon}>⭐</Text>
           <Text style={styles.rating}>{service.rating}</Text>
-          <Text style={styles.reviewCount}>({service.provider.reviewCount} reviews)</Text>
+          <Text style={styles.reviewCount}>({service.provider?.reviewCount || 0} reviews)</Text>
         </View>
         
         {service.featured && (
@@ -137,32 +149,38 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
     </View>
   );
 
-  const renderProviderInfo = () => (
-    <TouchableOpacity style={styles.providerContainer} onPress={handleProviderPress}>
-      <View style={styles.providerInfo}>
-        <View style={styles.providerAvatar}>
-          <Text style={styles.providerAvatarText}>
-            {service.provider.name.charAt(0)}
-          </Text>
-        </View>
-        
-        <View style={styles.providerDetails}>
-          <Text style={styles.providerName}>{service.provider.name}</Text>
-          <View style={styles.providerRating}>
-            <Text style={styles.providerRatingIcon}>⭐</Text>
-            <Text style={styles.providerRatingText}>{service.provider.rating}</Text>
-            <Text style={styles.providerReviewCount}>
-              • {service.provider.reviewCount} reviews
+  const renderProviderInfo = () => {
+    const providerName = service.provider?.name || 'Provider';
+    const providerRating = service.provider?.rating || 5;
+    const reviewCount = service.provider?.reviewCount || 0;
+    
+    return (
+      <TouchableOpacity style={styles.providerContainer} onPress={handleProviderPress}>
+        <View style={styles.providerInfo}>
+          <View style={styles.providerAvatar}>
+            <Text style={styles.providerAvatarText}>
+              {providerName.charAt(0).toUpperCase()}
             </Text>
           </View>
+          
+          <View style={styles.providerDetails}>
+            <Text style={styles.providerName}>{providerName}</Text>
+            <View style={styles.providerRating}>
+              <Text style={styles.providerRatingIcon}>⭐</Text>
+              <Text style={styles.providerRatingText}>{providerRating}</Text>
+              <Text style={styles.providerReviewCount}>
+                • {reviewCount} reviews
+              </Text>
+            </View>
+          </View>
         </View>
-      </View>
-      
-      <TouchableOpacity style={styles.messageButton} onPress={handleMessageProvider}>
-        <Text style={styles.messageIcon}>💬</Text>
+        
+        <TouchableOpacity style={styles.messageButton} onPress={handleMessageProvider}>
+          <Text style={styles.messageIcon}>💬</Text>
+        </TouchableOpacity>
       </TouchableOpacity>
-    </TouchableOpacity>
-  );
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -170,12 +188,18 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
         return (
           <View style={styles.tabContent}>
             <Text style={styles.sectionTitle}>What's Included</Text>
-            {service.services.map((item, index) => (
+            {(service.services || []).map((item, index) => (
               <View key={index} style={styles.serviceItem}>
                 <Text style={styles.checkIcon}>✅</Text>
                 <Text style={styles.serviceItemText}>{item}</Text>
               </View>
             ))}
+            {(!service.services || service.services.length === 0) && (
+              <View style={styles.serviceItem}>
+                <Text style={styles.checkIcon}>ℹ️</Text>
+                <Text style={styles.serviceItemText}>Service details will be provided by the provider</Text>
+              </View>
+            )}
           </View>
         );
       

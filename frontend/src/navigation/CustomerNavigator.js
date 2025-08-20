@@ -8,14 +8,15 @@ import { COLORS } from '../constants/theme';
 // Import screens
 import BookingScreen from '../screens/customer/BookingScreen';
 import BookingsScreen from '../screens/customer/BookingsScreen';
-import ChatScreen from '../screens/customer/ChatScreen';
+import ChatScreen from '../screens/ChatScreen';
 import HomeScreen from '../screens/customer/HomeScreen';
 import NotificationsScreen from '../screens/customer/NotificationsScreen';
-import PaymentScreen from '../screens/customer/PaymentScreen';
+import PaymentScreen from '../screens/PaymentScreen';
 import ProfileScreen from '../screens/customer/ProfileScreen';
-import ServicesScreen from '../screens/customer/ServicesScreen';
+import EnhancedServicesScreen from '../screens/EnhancedServicesScreen';
 import SettingsScreen from '../screens/customer/SettingsScreen';
 import ServiceDetailsScreen from '../screens/ServiceDetailsScreen';
+import BookingFormScreen from '../screens/BookingFormScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -39,8 +40,11 @@ const HomeStack = () => (
 
 const ServicesStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="ServicesMain" component={ServicesScreen} />
+    <Stack.Screen name="ServicesMain" component={EnhancedServicesScreen} />
     <Stack.Screen name="ServiceDetails" component={ServiceDetailsScreen} />
+    <Stack.Screen name="BookingForm" component={BookingFormScreen} />
+    <Stack.Screen name="Payment" component={PaymentScreen} />
+    <Stack.Screen name="Chat" component={ChatScreen} />
   </Stack.Navigator>
 );
 

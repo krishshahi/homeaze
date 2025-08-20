@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
+import PaymentAPI from '../services/paymentApi';
 
 const PaymentScreen = ({ navigation, route }) => {
   const dispatch = useAppDispatch();
@@ -207,19 +208,44 @@ const PaymentScreen = ({ navigation, route }) => {
         }
       }
       
-      // Simulate payment processing
-      console.log('💳 Processing payment:', {
-        method: selectedPaymentMethod,
-        amount,
-        bookingId,
-      });
+      // Calculate final amount
+      const finalAmount = (amount + 3.99 + (amount * 0.08));
       
-      // Simulate API delay
-      setTimeout(() => {
-        setLoading(false);
+      // Prepare payment data
+      let paymentData = {
+        bookingId,
+        amount: finalAmount,
+        currency: 'USD',
+        paymentMethod: selectedPaymentMethod,
+      };
+      
+      // Add card details if using new card
+      if (selectedPaymentMethod === 'card' && savedCards.length === 0) {
+        paymentData.cardDetails = {
+          cardNumber: cardForm.cardNumber.replace(/\s/g, ''),
+          expiryMonth: cardForm.expiryMonth,
+          expiryYear: cardForm.expiryYear,
+          cvv: cardForm.cvv,
+          cardholderName: cardForm.cardholderName,
+          billingAddress,
+        };
+      } else if (selectedPaymentMethod === 'card' && savedCards.length > 0) {
+        // Use default saved card
+        const defaultCard = savedCards.find(card => card.isDefault) || savedCards[0];
+        paymentData.savedCardId = defaultCard.id;
+      }
+      
+      console.log('💳 Processing payment:', paymentData);
+      
+      // Process payment via API
+      const paymentResult = await PaymentAPI.processPayment(paymentData);
+      
+      setLoading(false);
+      
+      if (paymentResult.success) {
         Alert.alert(
           'Payment Successful!',
-          `Your payment of $${amount} has been processed successfully.`,
+          `Your payment of $${finalAmount.toFixed(2)} has been processed successfully.`,
           [
             {
               text: 'OK',
@@ -233,14 +259,16 @@ const PaymentScreen = ({ navigation, route }) => {
             },
           ]
         );
-      }, 2000);
+      } else {
+        throw new Error(paymentResult.message || 'Payment failed');
+      }
       
     } catch (error) {
       console.error('❌ Error processing payment:', error);
       setLoading(false);
       Alert.alert(
         'Payment Failed',
-        'There was an issue processing your payment. Please try again.',
+        error.message || 'There was an issue processing your payment. Please try again.',
         [{ text: 'OK' }]
       );
     }

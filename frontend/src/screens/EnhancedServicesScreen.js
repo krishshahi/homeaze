@@ -22,6 +22,7 @@ import CustomInput from '../components/CustomInput';
 import ServiceCard from '../components/ServiceCard';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS } from '../constants/theme';
 import * as servicesApi from '../services/servicesApi';
+import LocationService from '../services/locationService';
 import { useAppDispatch, useServices, useAuth } from '../store/hooks';
 import { fetchServices, fetchCategories, updateFilters, searchServices } from '../store/slices/servicesSlice';
 
@@ -44,6 +45,11 @@ const EnhancedServicesScreen = ({ navigation }) => {
   const [showOnlyFeatured, setShowOnlyFeatured] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  // Location state
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [nearbyOnly, setNearbyOnly] = useState(false);
+  const [searchRadius, setSearchRadius] = useState(10); // km
 
   // Enhanced categories with icons and colors
   const enhancedCategories = [
@@ -62,7 +68,53 @@ const EnhancedServicesScreen = ({ navigation }) => {
   useEffect(() => {
     loadInitialData();
     startAnimations();
+    requestLocationPermission();
   }, []);
+
+  const requestLocationPermission = async () => {
+    try {
+      const hasPermission = await LocationService.requestPermissions();
+      if (hasPermission) {
+        getCurrentLocation();
+      }
+    } catch (error) {
+      console.log('Location permission denied or error:', error);
+    }
+  };
+
+  const getCurrentLocation = async () => {
+    try {
+      setLocationLoading(true);
+      const location = await LocationService.getCurrentLocation();
+      setUserLocation(location);
+    } catch (error) {
+      console.log('Error getting location:', error);
+    } finally {
+      setLocationLoading(false);
+    }
+  };
+
+  const loadNearbyServices = async () => {
+    if (!userLocation) {
+      await getCurrentLocation();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const nearbyServices = await LocationService.findNearbyServices({
+        radius: searchRadius,
+        category: selectedCategory
+      });
+      
+      // Update services in store with nearby results
+      dispatch({ type: 'services/setNearbyServices', payload: nearbyServices });
+    } catch (error) {
+      console.error('Error loading nearby services:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const startAnimations = () => {
     Animated.parallel([
@@ -119,7 +171,7 @@ const EnhancedServicesScreen = ({ navigation }) => {
     ]).start();
   };
 
-  // Enhanced filtering logic
+  // Enhanced filtering logic with location support
   const getFilteredServices = () => {
     return services.filter(service => {
       // Search filter
@@ -145,7 +197,21 @@ const EnhancedServicesScreen = ({ navigation }) => {
       // Featured filter
       const matchesFeatured = !showOnlyFeatured || service.featured;
       
-      return matchesSearch && matchesCategory && matchesPrice && matchesFeatured;
+      // Location filter
+      let matchesLocation = true;
+      if (nearbyOnly && userLocation && service.location) {
+        const distance = LocationService.calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          service.location.latitude,
+          service.location.longitude
+        );
+        matchesLocation = distance <= searchRadius;
+        // Add distance to service for sorting
+        service.distance = distance;
+      }
+      
+      return matchesSearch && matchesCategory && matchesPrice && matchesFeatured && matchesLocation;
     });
   };
 
@@ -264,6 +330,63 @@ const EnhancedServicesScreen = ({ navigation }) => {
             </View>
           </View>
 
+          {/* Location Filters */}
+          {userLocation && (
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Location</Text>
+              
+              {/* Nearby Toggle */}
+              <TouchableOpacity
+                style={styles.toggleOption}
+                onPress={() => setNearbyOnly(!nearbyOnly)}
+              >
+                <Text style={styles.filterOptionText}>📍 Show nearby services only</Text>
+                <View style={[
+                  styles.toggle,
+                  nearbyOnly && styles.toggleActive
+                ]}>
+                  {nearbyOnly && (
+                    <Ionicons name="checkmark" size={16} color={COLORS.white} />
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* Search Radius */}
+              {nearbyOnly && (
+                <View style={styles.radiusContainer}>
+                  <Text style={styles.radiusLabel}>Search Radius: {searchRadius} km</Text>
+                  <View style={styles.radiusButtons}>
+                    {[5, 10, 25, 50].map((radius) => (
+                      <TouchableOpacity
+                        key={radius}
+                        style={[
+                          styles.radiusButton,
+                          searchRadius === radius && styles.radiusButtonActive
+                        ]}
+                        onPress={() => setSearchRadius(radius)}
+                      >
+                        <Text style={[
+                          styles.radiusButtonText,
+                          searchRadius === radius && styles.radiusButtonTextActive
+                        ]}>
+                          {radius}km
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              <CustomButton
+                title="Find Nearby Services"
+                variant="outline"
+                onPress={loadNearbyServices}
+                style={styles.nearbyButton}
+                disabled={!userLocation}
+              />
+            </View>
+          )}
+
           {/* Featured Toggle */}
           <View style={styles.filterSection}>
             <TouchableOpacity
@@ -317,15 +440,28 @@ const EnhancedServicesScreen = ({ navigation }) => {
             <View style={styles.headerContent}>
               <Text style={styles.headerTitle}>Find Services</Text>
               <Text style={styles.headerSubtitle}>
-                {sortedServices.length} services available
+                {sortedServices.length} services available{userLocation && nearbyOnly ? ` nearby` : ''}
               </Text>
             </View>
-            <TouchableOpacity 
-              style={styles.filterButton}
-              onPress={() => setShowFilters(true)}
-            >
-              <Ionicons name="options-outline" size={24} color={COLORS.white} />
-            </TouchableOpacity>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity 
+                style={[styles.locationButton, userLocation && nearbyOnly && styles.locationButtonActive]}
+                onPress={getCurrentLocation}
+                disabled={locationLoading}
+              >
+                <Ionicons 
+                  name={locationLoading ? "refresh" : userLocation ? "location" : "location-outline"} 
+                  size={20} 
+                  color={COLORS.white} 
+                />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.filterButton}
+                onPress={() => setShowFilters(true)}
+              >
+                <Ionicons name="options-outline" size={24} color={COLORS.white} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Search Bar */}
@@ -463,12 +599,32 @@ const styles = StyleSheet.create({
     fontWeight: FONTS.weightMedium,
   },
 
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+
   filterButton: {
     backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: BORDER_RADIUS.round,
     padding: SPACING.md,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
+  },
+
+  locationButton: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: BORDER_RADIUS.round,
+    padding: SPACING.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    marginRight: SPACING.sm,
+  },
+
+  locationButtonActive: {
+    backgroundColor: COLORS.success + '30',
+    borderColor: COLORS.success,
   },
 
   // Search Container
@@ -642,6 +798,59 @@ const styles = StyleSheet.create({
 
   toggleActive: {
     backgroundColor: COLORS.primary,
+  },
+
+  // Location Controls
+  radiusContainer: {
+    marginTop: SPACING.md,
+    padding: SPACING.md,
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: BORDER_RADIUS.lg,
+  },
+
+  radiusLabel: {
+    fontSize: FONTS.body2,
+    fontWeight: FONTS.weightSemiBold,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.md,
+    textAlign: 'center',
+  },
+
+  radiusButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: SPACING.sm,
+  },
+
+  radiusButton: {
+    flex: 1,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+  },
+
+  radiusButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+
+  radiusButtonText: {
+    fontSize: FONTS.body3,
+    fontWeight: FONTS.weightMedium,
+    color: COLORS.textPrimary,
+  },
+
+  radiusButtonTextActive: {
+    color: COLORS.white,
+    fontWeight: FONTS.weightBold,
+  },
+
+  nearbyButton: {
+    marginTop: SPACING.md,
   },
 
   applyButton: {
