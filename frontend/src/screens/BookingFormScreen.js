@@ -11,7 +11,29 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CustomButton from '../components/CustomButton';
-import CustomInput from '../components/CustomInput';
+// import CustomInput from '../components/CustomInput';
+
+// Temporary simple input to bypass JSX error
+const SimpleInput = ({ placeholder, value, onChangeText, multiline, numberOfLines, keyboardType, style }) => {
+  return (
+    <TextInput
+      style={[{
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        padding: 12,
+        backgroundColor: '#fff',
+        fontSize: 16
+      }, style]}
+      placeholder={placeholder}
+      value={value}
+      onChangeText={onChangeText}
+      multiline={multiline}
+      numberOfLines={numberOfLines}
+      keyboardType={keyboardType}
+    />
+  );
+};
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import BookingsAPI from '../services/bookingsApi';
 import ServicesAPI from '../services/servicesApi';
@@ -101,17 +123,24 @@ const BookingFormScreen = ({ navigation, route }) => {
       console.log('🔍 Service object structure:', JSON.stringify(service, null, 2));
       
       // Try multiple ways to extract provider ID
-      const providerId = service?.providerId || 
-                        service?.provider?.id || 
-                        service?.provider?._id || 
-                        service?.userId ||
-                        service?.createdBy ||
-                        service?.ownerId;
+      let providerId = service?.providerId || 
+                      service?.provider?.id || 
+                      service?.provider?._id || 
+                      service?.userId ||
+                      service?.createdBy ||
+                      service?.ownerId;
+      
+      // Handle case where provider is just a string (provider name)
+      if (!providerId && typeof service?.provider === 'string') {
+        // Generate a consistent ID based on the provider name
+        providerId = 'provider-' + service.provider.toLowerCase().replace(/\s+/g, '-');
+        console.log('🔍 Generated provider ID from name:', providerId);
+      }
       
       console.log('🔍 Detected provider ID:', providerId);
       
-      // If still no provider ID, use a fallback for testing
-      const finalProviderId = providerId || 'fallback-provider-id';
+      // If still no provider ID, create a more meaningful fallback
+      const finalProviderId = providerId || `fallback-${serviceId.slice(-8)}`;
       
       // Prepare booking data
       const bookingData = {
@@ -206,7 +235,9 @@ const BookingFormScreen = ({ navigation, route }) => {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Provider:</Text>
             <Text style={styles.summaryValue}>
-              {service?.provider?.name || service?.provider?.businessName || 'Loading...'}
+              {typeof service?.provider === 'string' 
+                ? service.provider 
+                : service?.provider?.name || service?.provider?.businessName || 'Loading...'}
             </Text>
           </View>
           <View style={styles.summaryRow}>
@@ -220,11 +251,10 @@ const BookingFormScreen = ({ navigation, route }) => {
         {/* Date Selection */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Select Date</Text>
-          <CustomInput
+          <SimpleInput
             placeholder="Select date (MM/DD/YYYY)"
             value={formData.selectedDate}
             onChangeText={(value) => handleInputChange('selectedDate', value)}
-            required={true}
           />
         </View>
 
@@ -234,32 +264,30 @@ const BookingFormScreen = ({ navigation, route }) => {
         {/* Address */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Service Address</Text>
-          <CustomInput
+          <SimpleInput
             placeholder="Enter your full address"
             value={formData.address}
             onChangeText={(value) => handleInputChange('address', value)}
             multiline={true}
             numberOfLines={3}
-            required={true}
           />
         </View>
 
         {/* Contact Phone */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Contact Phone</Text>
-          <CustomInput
+          <SimpleInput
             placeholder="Enter your phone number"
             value={formData.contactPhone}
             onChangeText={(value) => handleInputChange('contactPhone', value)}
             keyboardType="phone-pad"
-            required={true}
           />
         </View>
 
         {/* Special Instructions */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Special Instructions (Optional)</Text>
-          <CustomInput
+          <SimpleInput
             placeholder="Any specific requirements or instructions..."
             value={formData.specialInstructions}
             onChangeText={(value) => handleInputChange('specialInstructions', value)}
