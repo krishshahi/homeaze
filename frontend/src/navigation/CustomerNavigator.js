@@ -17,6 +17,7 @@ import EnhancedServicesScreen from '../screens/EnhancedServicesScreen';
 import SettingsScreen from '../screens/customer/SettingsScreen';
 import ServiceDetailsScreen from '../screens/ServiceDetailsScreen';
 import BookingFormScreen from '../screens/BookingFormScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -59,6 +60,7 @@ const BookingsStack = () => (
 const ProfileStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="ProfileMain" component={ProfileScreen} />
+    <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
   </Stack.Navigator>
 );

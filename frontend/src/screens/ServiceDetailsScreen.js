@@ -28,42 +28,124 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(!routeService && !!serviceId);
   const [error, setError] = useState(null);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [calculatedPrice, setCalculatedPrice] = useState(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
 
   useEffect(() => {
-    if (service) return; // already set from route
-    if (!serviceId) return;
-    const foundService = services.find((s) => (s.id || s._id) === serviceId);
-    if (foundService) {
-      setService(foundService);
+    console.log('🔍 ServiceDetailsScreen mounted with:', { serviceId, routeService });
+    
+    // If we already have service data from route, use it immediately
+    if (routeService) {
+      console.log('✅ Using service data from navigation:', routeService.title);
+      const normalizedService = {
+        id: routeService.id || routeService._id,
+        title: routeService.title || routeService.name,
+        description: routeService.description || 'Professional service for your home',
+        startingPrice: routeService.startingPrice || routeService.price || 75,
+        rating: routeService.rating || 4.8,
+        featured: !!routeService.featured,
+        availability: typeof routeService.availability === 'object' ? 'Available' : routeService.availability || 'Available',
+        icon: routeService.icon || '🧰',
+        provider: routeService.provider || { 
+          id: routeService.providerId, 
+          name: routeService.providerName || 'Professional Provider', 
+          rating: routeService.providerRating || 4.9, 
+          reviewCount: routeService.providerReviewCount || 127 
+        },
+        services: routeService.includedServices || routeService.services || [
+          'Professional service delivery',
+          'Quality tools and equipment',
+          'Licensed and insured',
+          'Satisfaction guarantee'
+        ],
+      };
+      setService(normalizedService);
       setLoading(false);
       return;
     }
-    (async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await servicesAPI.getServiceDetails(serviceId);
-        const data = res?.data || res;
-        setService({
-          id: data.id || data._id,
-          title: data.title || data.name,
-          description: data.description || '',
-          startingPrice: data.startingPrice || data.price || 0,
-          rating: data.rating || 5,
-          featured: !!data.featured,
-          availability: typeof data.availability === 'object' ? 'Available' : data.availability || 'Available',
-          icon: data.icon || '🧰',
-          provider: data.provider || { id: data.providerId, name: data.providerName || 'Provider', rating: data.providerRating || 5, reviewCount: data.providerReviewCount || 0 },
-          services: data.includedServices || data.services || [],
-        });
-      } catch (e) {
-        console.error('Failed to fetch service details', e);
-        setError('Failed to load service details');
-      } finally {
+    
+    // Try to find service in Redux store
+    if (serviceId) {
+      const foundService = services.find((s) => (s.id || s._id) === serviceId);
+      if (foundService) {
+        console.log('✅ Found service in Redux store:', foundService.title);
+        const normalizedService = {
+          id: foundService.id || foundService._id,
+          title: foundService.title || foundService.name,
+          description: foundService.description || 'Professional service for your home',
+          startingPrice: foundService.startingPrice || foundService.price || 75,
+          rating: foundService.rating || 4.8,
+          featured: !!foundService.featured,
+          availability: typeof foundService.availability === 'object' ? 'Available' : foundService.availability || 'Available',
+          icon: foundService.icon || '🧰',
+          provider: foundService.provider || { 
+            id: foundService.providerId, 
+            name: foundService.providerName || 'Professional Provider', 
+            rating: foundService.providerRating || 4.9, 
+            reviewCount: foundService.providerReviewCount || 127 
+          },
+          services: foundService.includedServices || foundService.services || [
+            'Professional service delivery',
+            'Quality tools and equipment', 
+            'Licensed and insured',
+            'Satisfaction guarantee'
+          ],
+        };
+        setService(normalizedService);
         setLoading(false);
+        return;
       }
-    })();
-  }, [serviceId, services, service]);
+    }
+    
+    // Fallback: try to fetch from API
+    if (serviceId) {
+      (async () => {
+        try {
+          console.log('🌐 Fetching service details from API for ID:', serviceId);
+          setLoading(true);
+          setError(null);
+          const res = await servicesAPI.getServiceDetails(serviceId);
+          const data = res?.data || res;
+          
+          const normalizedService = {
+            id: data.id || data._id,
+            title: data.title || data.name,
+            description: data.description || 'Professional service for your home',
+            startingPrice: data.startingPrice || data.price || 75,
+            rating: data.rating || 4.8,
+            featured: !!data.featured,
+            availability: typeof data.availability === 'object' ? 'Available' : data.availability || 'Available',
+            icon: data.icon || '🧰',
+            provider: data.provider || { 
+              id: data.providerId, 
+              name: data.providerName || 'Professional Provider', 
+              rating: data.providerRating || 4.9, 
+              reviewCount: data.providerReviewCount || 127 
+            },
+            services: data.includedServices || data.services || [
+              'Professional service delivery',
+              'Quality tools and equipment',
+              'Licensed and insured', 
+              'Satisfaction guarantee'
+            ],
+          };
+          setService(normalizedService);
+          console.log('✅ Service details loaded from API:', normalizedService.title);
+        } catch (e) {
+          console.error('❌ Failed to fetch service details from API:', e);
+          setError('Failed to load service details');
+        } finally {
+          setLoading(false);
+        }
+      })();
+    } else {
+      console.error('❌ No serviceId provided to ServiceDetailsScreen');
+      setError('No service ID provided');
+      setLoading(false);
+    }
+  }, [serviceId, routeService, services]);
 
   if (loading || !service) {
     return (
@@ -101,6 +183,52 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
     // Navigate to chat screen (to be implemented)
     console.log('Message provider:', service.provider.name);
   };
+
+  const handleToggleFavorite = () => {
+    setIsFavorited(!isFavorited);
+    // In a real app, this would sync with backend/storage
+    console.log(isFavorited ? 'Removed from favorites' : 'Added to favorites');
+  };
+
+  const calculatePrice = () => {
+    let basePrice = service.startingPrice;
+    let totalPrice = basePrice;
+    
+    // Add selected options pricing
+    Object.entries(selectedOptions).forEach(([key, option]) => {
+      if (option.selected && option.price) {
+        totalPrice += option.price;
+      }
+    });
+    
+    setCalculatedPrice(totalPrice);
+  };
+
+  const handleOptionToggle = (optionKey, option) => {
+    const newOptions = {
+      ...selectedOptions,
+      [optionKey]: {
+        ...option,
+        selected: !selectedOptions[optionKey]?.selected
+      }
+    };
+    setSelectedOptions(newOptions);
+    
+    // Recalculate price
+    let totalPrice = service.startingPrice;
+    Object.entries(newOptions).forEach(([key, opt]) => {
+      if (opt.selected && opt.price) {
+        totalPrice += opt.price;
+      }
+    });
+    setCalculatedPrice(totalPrice);
+  };
+
+  useEffect(() => {
+    if (service) {
+      setCalculatedPrice(service.startingPrice);
+    }
+  }, [service]);
 
   const renderImageGallery = () => (
     <View style={styles.imageGalleryContainer}>
@@ -203,6 +331,67 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
           </View>
         );
       
+      case 'pricing':
+        return (
+          <View style={styles.tabContent}>
+            <Text style={styles.sectionTitle}>Service Options & Pricing</Text>
+            
+            {/* Base Service */}
+            <View style={styles.pricingCard}>
+              <View style={styles.pricingHeader}>
+                <Text style={styles.pricingTitle}>Base Service</Text>
+                <Text style={styles.pricingPrice}>${service.startingPrice}</Text>
+              </View>
+              <Text style={styles.pricingDescription}>Standard cleaning service with basic tasks</Text>
+            </View>
+            
+            {/* Add-on Options */}
+            <Text style={styles.sectionSubtitle}>Add-on Services</Text>
+            
+            {mockServiceOptions.map((option) => (
+              <TouchableOpacity 
+                key={option.id} 
+                style={[styles.optionCard, selectedOptions[option.id]?.selected && styles.optionCardSelected]}
+                onPress={() => handleOptionToggle(option.id, option)}
+              >
+                <View style={styles.optionContent}>
+                  <View style={styles.optionInfo}>
+                    <Text style={styles.optionTitle}>{option.title}</Text>
+                    <Text style={styles.optionDescription}>{option.description}</Text>
+                  </View>
+                  <View style={styles.optionRight}>
+                    <Text style={styles.optionPrice}>+${option.price}</Text>
+                    <View style={[styles.checkbox, selectedOptions[option.id]?.selected && styles.checkboxSelected]}>
+                      {selectedOptions[option.id]?.selected && <Text style={styles.checkmark}>✓</Text>}
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+            
+            {/* Total Price Summary */}
+            <View style={styles.pricingSummary}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Base Service</Text>
+                <Text style={styles.summaryValue}>${service.startingPrice}</Text>
+              </View>
+              {Object.entries(selectedOptions).map(([key, option]) => 
+                option.selected && (
+                  <View key={key} style={styles.summaryRow}>
+                    <Text style={styles.summaryLabel}>{option.title}</Text>
+                    <Text style={styles.summaryValue}>+${option.price}</Text>
+                  </View>
+                )
+              )}
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryTotalLabel}>Total</Text>
+                <Text style={styles.summaryTotalValue}>${calculatedPrice}</Text>
+              </View>
+            </View>
+          </View>
+        );
+      
       case 'reviews':
         return (
           <View style={styles.tabContent}>
@@ -250,8 +439,10 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
         
         <Text style={styles.headerTitle}>Service Details</Text>
         
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Text style={styles.favoriteIcon}>♡</Text>
+        <TouchableOpacity style={styles.favoriteButton} onPress={handleToggleFavorite}>
+          <Text style={[styles.favoriteIcon, isFavorited && styles.favoriteIconActive]}>
+            {isFavorited ? '❤️' : '♡'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -268,6 +459,15 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
           >
             <Text style={[styles.tabText, activeTab === 'overview' && styles.activeTabText]}>
               Overview
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'pricing' && styles.activeTab]}
+            onPress={() => setActiveTab('pricing')}
+          >
+            <Text style={[styles.tabText, activeTab === 'pricing' && styles.activeTabText]}>
+              Pricing
             </Text>
           </TouchableOpacity>
           
@@ -289,8 +489,12 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
       {/* Bottom Action Bar */}
       <View style={styles.bottomBar}>
         <View style={styles.priceInfo}>
-          <Text style={styles.bottomPriceLabel}>Starting from</Text>
-          <Text style={styles.bottomPrice}>${service.startingPrice}</Text>
+          <Text style={styles.bottomPriceLabel}>
+            {calculatedPrice > service.startingPrice ? 'Total Price' : 'Starting from'}
+          </Text>
+          <Text style={[styles.bottomPrice, calculatedPrice > service.startingPrice && styles.dynamicPrice]}>
+            ${calculatedPrice || service.startingPrice}
+          </Text>
         </View>
         
         <CustomButton
@@ -302,6 +506,40 @@ const ServiceDetailsScreen = ({ navigation, route }) => {
     </SafeAreaView>
   );
 };
+
+// Mock service options data
+const mockServiceOptions = [
+  {
+    id: 'deep-clean',
+    title: 'Deep Clean',
+    description: 'Thorough deep cleaning including inside appliances, baseboards, and detailed dusting',
+    price: 25,
+  },
+  {
+    id: 'eco-products',
+    title: 'Eco-Friendly Products',
+    description: 'Use only environmentally safe and non-toxic cleaning products',
+    price: 10,
+  },
+  {
+    id: 'inside-oven',
+    title: 'Inside Oven Cleaning',
+    description: 'Deep clean inside of oven, including racks and glass door',
+    price: 15,
+  },
+  {
+    id: 'fridge-clean',
+    title: 'Inside Refrigerator',
+    description: 'Clean inside refrigerator shelves, drawers, and compartments',
+    price: 12,
+  },
+  {
+    id: 'window-cleaning',
+    title: 'Window Cleaning',
+    description: 'Clean interior windows and window sills (up to 10 windows)',
+    price: 20,
+  },
+];
 
 // Mock reviews data
 const mockReviews = [
@@ -370,6 +608,9 @@ const styles = StyleSheet.create({
   favoriteIcon: {
     fontSize: FONTS.lg,
     color: COLORS.textMuted,
+  },
+  favoriteIconActive: {
+    color: COLORS.error,
   },
   content: {
     flex: 1,
@@ -694,6 +935,138 @@ const styles = StyleSheet.create({
   
   bottomSpacing: {
     height: SPACING.xl,
+  },
+  
+  // Pricing Styles
+  sectionSubtitle: {
+    fontSize: FONTS.md,
+    fontWeight: FONTS.weightSemiBold,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
+    marginTop: SPACING.lg,
+  },
+  pricingCard: {
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+  },
+  pricingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  pricingTitle: {
+    fontSize: FONTS.md,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.textPrimary,
+  },
+  pricingPrice: {
+    fontSize: FONTS.lg,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.primary,
+  },
+  pricingDescription: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+  },
+  optionCard: {
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: BORDER_RADIUS.md,
+    marginBottom: SPACING.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  optionCardSelected: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '10',
+  },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  optionInfo: {
+    flex: 1,
+    paddingRight: SPACING.md,
+  },
+  optionTitle: {
+    fontSize: FONTS.md,
+    fontWeight: FONTS.weightSemiBold,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.xs,
+  },
+  optionDescription: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+  },
+  optionRight: {
+    alignItems: 'flex-end',
+  },
+  optionPrice: {
+    fontSize: FONTS.sm,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.primary,
+    marginBottom: SPACING.xs,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: BORDER_RADIUS.sm,
+    borderWidth: 2,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  checkmark: {
+    fontSize: FONTS.xs,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.white,
+  },
+  pricingSummary: {
+    backgroundColor: COLORS.backgroundSecondary,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    marginTop: SPACING.lg,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  summaryLabel: {
+    fontSize: FONTS.sm,
+    color: COLORS.textSecondary,
+  },
+  summaryValue: {
+    fontSize: FONTS.sm,
+    color: COLORS.textPrimary,
+    fontWeight: FONTS.weightMedium,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: SPACING.sm,
+  },
+  summaryTotalLabel: {
+    fontSize: FONTS.md,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.textPrimary,
+  },
+  summaryTotalValue: {
+    fontSize: FONTS.lg,
+    fontWeight: FONTS.weightBold,
+    color: COLORS.primary,
+  },
+  dynamicPrice: {
+    color: COLORS.success,
   },
 });
 

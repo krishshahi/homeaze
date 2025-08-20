@@ -154,8 +154,9 @@ const EnhancedServicesScreen = ({ navigation }) => {
   };
 
   const handleServicePress = (service) => {
+    console.log('Service selected:', service.title, 'ID:', service._id || service.id);
     navigation.navigate('ServiceDetails', { 
-      serviceId: service.id,
+      serviceId: service._id || service.id,
       service: service 
     });
   };

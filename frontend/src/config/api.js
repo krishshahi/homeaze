@@ -1,12 +1,16 @@
 // API Configuration for Homeaze Frontend
 
+// Centralized API configuration
 // For Expo development, use these options:
 // Option 1: localhost (works for web/simulator)
 // Option 2: Your computer's IP (works for physical device on same network)
 // Option 3: Expo tunnel (works for any device)
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:5000/api'  // Development server
+export const API_BASE_URL = __DEV__ 
+  ? 'http://192.168.1.129:3001/api'  // Development server (use your computer's IP for device access)
   : 'https://your-production-api-url.com/api'; // Production server
+
+// Standard token storage key
+export const TOKEN_STORAGE_KEY = 'token';
 
 console.log('🔧 API Base URL:', API_BASE_URL);
 

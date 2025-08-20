@@ -1,38 +1,16 @@
 const express = require('express');
 const { body, query, param } = require('express-validator');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const { auth, requireProvider, requireCustomer } = require('../middleware/auth');
 const bookingController = require('../controllers/bookingController');
 
 const router = express.Router();
-
-// Middleware to check if user is customer
-const requireCustomer = (req, res, next) => {
-  if (req.user.userType !== 'customer') {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied. Customer role required.'
-    });
-  }
-  next();
-};
-
-// Middleware to check if user is provider
-const requireProvider = (req, res, next) => {
-  if (req.user.userType !== 'provider') {
-    return res.status(403).json({
-      success: false,
-      message: 'Access denied. Provider role required.'
-    });
-  }
-  next();
-};
 
 // @route   POST /api/bookings
 // @desc    Create a new booking (Customer only)
 // @access  Private (Customer)
 router.post('/', 
-  authenticateToken, 
-  requireCustomer, 
+  auth, 
+  requireCustomer,
   [
     body('serviceId').isMongoId().withMessage('Valid service ID is required'),
     body('scheduledDate').isISO8601().withMessage('Valid scheduled date is required'),
@@ -51,7 +29,7 @@ router.post('/',
 // @desc    Get user's bookings (Customer or Provider)
 // @access  Private
 router.get('/',
-  authenticateToken,
+  auth,
   [
     query('status').optional().isString().withMessage('Status must be a string'),
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
@@ -64,7 +42,7 @@ router.get('/',
 // @desc    Get single booking details
 // @access  Private (Customer or Provider involved in booking)
 router.get('/:bookingId',
-  authenticateToken,
+  auth,
   [
     param('bookingId').isMongoId().withMessage('Valid booking ID is required')
   ],
@@ -75,7 +53,7 @@ router.get('/:bookingId',
 // @desc    Update booking status (Provider confirms/rejects booking)
 // @access  Private (Provider)
 router.put('/:bookingId/status',
-  authenticateToken,
+  auth,
   requireProvider,
   [
     param('bookingId').isMongoId().withMessage('Valid booking ID is required'),
@@ -89,7 +67,7 @@ router.put('/:bookingId/status',
 // @desc    Start service (Provider marks as in-progress)
 // @access  Private (Provider)
 router.put('/:bookingId/start',
-  authenticateToken,
+  auth,
   requireProvider,
   [
     param('bookingId').isMongoId().withMessage('Valid booking ID is required')
@@ -101,7 +79,7 @@ router.put('/:bookingId/start',
 // @desc    Complete service (Provider marks as completed)
 // @access  Private (Provider)
 router.put('/:bookingId/complete',
-  authenticateToken,
+  auth,
   requireProvider,
   [
     param('bookingId').isMongoId().withMessage('Valid booking ID is required'),
@@ -119,7 +97,7 @@ router.put('/:bookingId/complete',
 // @desc    Cancel booking (Both customer and provider can cancel)
 // @access  Private
 router.put('/:bookingId/cancel',
-  authenticateToken,
+  auth,
   [
     param('bookingId').isMongoId().withMessage('Valid booking ID is required'),
     body('reason').trim().notEmpty().withMessage('Reason for cancellation is required')
@@ -131,7 +109,7 @@ router.put('/:bookingId/cancel',
 // @desc    Add message to booking communication
 // @access  Private (Customer or Provider involved in booking)
 router.post('/:bookingId/messages',
-  authenticateToken,
+  auth,
   [
     param('bookingId').isMongoId().withMessage('Valid booking ID is required'),
     body('message').trim().notEmpty().withMessage('Message is required'),
@@ -144,7 +122,7 @@ router.post('/:bookingId/messages',
 // @desc    Get booking messages
 // @access  Private (Customer or Provider involved in booking)
 router.get('/:bookingId/messages',
-  authenticateToken,
+  auth,
   [
     param('bookingId').isMongoId().withMessage('Valid booking ID is required')
   ],

@@ -2,8 +2,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const WEBSOCKET_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://192.168.1.129:3001/api';
+const WEBSOCKET_URL = (process.env.REACT_APP_API_URL || 'http://192.168.1.129:3001/api').replace(/\/api$/, '');
 
 class MessagingAPI {
   static socket = null;

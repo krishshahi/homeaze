@@ -88,7 +88,7 @@ const FeaturesDemoScreen = ({ navigation }) => {
       subtitle: 'Browse and search services',
       icon: '🛠️',
       onPress: () => testFeature('Services API', async () => {
-        const result = await fetch('http://localhost:5000/api/services');
+        const result = await fetch('http://192.168.1.129:3001/api/services');
         return await result.json();
       }),
       category: 'API'
@@ -98,7 +98,7 @@ const FeaturesDemoScreen = ({ navigation }) => {
       subtitle: 'Push, Email, SMS notifications',
       icon: '🔔',
       onPress: () => testFeature('Notifications', async () => {
-        const result = await fetch('http://localhost:5000/api/notifications');
+        const result = await fetch('http://192.168.1.129:3001/api/notifications');
         return await result.json();
       }),
       category: 'Real-time'
@@ -108,7 +108,7 @@ const FeaturesDemoScreen = ({ navigation }) => {
       subtitle: 'Multiple gateways, subscriptions',
       icon: '💳',
       onPress: () => testFeature('Payment System', async () => {
-        const result = await fetch('http://localhost:5000/api/payments/stats');
+        const result = await fetch('http://192.168.1.129:3001/api/payments/stats');
         return await result.json();
       }),
       category: 'Payments'
@@ -118,7 +118,7 @@ const FeaturesDemoScreen = ({ navigation }) => {
       subtitle: 'ML recommendations, insights',
       icon: '🤖',
       onPress: () => testFeature('AI Analytics', async () => {
-        const result = await fetch('http://localhost:5000/api/analytics/overview');
+        const result = await fetch('http://192.168.1.129:3001/api/analytics/overview');
         return await result.json();
       }),
       category: 'AI'
@@ -128,7 +128,7 @@ const FeaturesDemoScreen = ({ navigation }) => {
       subtitle: 'Real-time messaging',
       icon: '💬',
       onPress: () => testFeature('Chat System', async () => {
-        const result = await fetch('http://localhost:5000/api/chat/conversations');
+        const result = await fetch('http://192.168.1.129:3001/api/chat/conversations');
         return await result.json();
       }),
       category: 'Communication'

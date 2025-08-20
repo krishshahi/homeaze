@@ -172,12 +172,21 @@ const bookingSlice = createSlice({
     },
     addBooking(state, action) {
       const booking = {
-        id: Date.now().toString(),
+        id: action.payload.id || action.payload._id || Date.now().toString(),
         ...action.payload,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
+        status: action.payload.status || 'pending',
+        createdAt: action.payload.createdAt || new Date().toISOString(),
       };
-      state.bookings.push(booking);
+      
+      // Check if booking already exists to avoid duplicates
+      const existingIndex = state.bookings.findIndex(b => b.id === booking.id);
+      if (existingIndex >= 0) {
+        // Update existing booking
+        state.bookings[existingIndex] = booking;
+      } else {
+        // Add new booking to the beginning
+        state.bookings.unshift(booking);
+      }
     },
     updateBookingStatus(state, action) {
       const { bookingId, status } = action.payload;
@@ -218,7 +227,24 @@ const bookingSlice = createSlice({
       })
       .addCase(fetchUserBookings.fulfilled, (state, action) => {
         state.loading = false;
-        state.bookings = Array.isArray(action.payload) ? action.payload : action.payload.bookings || [];
+        const apiBookings = Array.isArray(action.payload) ? action.payload : action.payload.bookings || [];
+        
+        // Merge API bookings with any local bookings that might not be in the API response yet
+        const existingLocalBookings = state.bookings.filter(localBooking => {
+          // Keep local bookings that aren't found in API response (newly created ones)
+          return !apiBookings.some(apiBooking => 
+            (apiBooking.id || apiBooking._id) === localBooking.id
+          );
+        });
+        
+        // Normalize API booking IDs to ensure consistency
+        const normalizedApiBookings = apiBookings.map(booking => ({
+          ...booking,
+          id: booking.id || booking._id || booking.bookingId,
+        }));
+        
+        // Combine local and API bookings, with API bookings taking precedence
+        state.bookings = [...existingLocalBookings, ...normalizedApiBookings];
         state.error = null;
       })
       .addCase(fetchUserBookings.rejected, (state, action) => {

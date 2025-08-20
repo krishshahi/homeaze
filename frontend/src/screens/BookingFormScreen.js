@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -38,7 +39,7 @@ import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/the
 import BookingsAPI from '../services/bookingsApi';
 import ServicesAPI from '../services/servicesApi';
 import { useAppDispatch, useServices, useAuth } from '../store/hooks';
-import { createNewBooking } from '../store/slices/bookingSlice';
+import { addBooking } from '../store/slices/bookingSlice';
 
 const BookingFormScreen = ({ navigation, route }) => {
   const { serviceId } = route.params;
@@ -59,11 +60,35 @@ const BookingFormScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [availableSlots, setAvailableSlots] = useState([]);
 
-  const timeSlots = [
-    '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
-    '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM',
-    '04:00 PM', '05:00 PM', '06:00 PM'
-  ];
+  // Generate time slots based on service availability
+  const getTimeSlots = () => {
+    if (!service?.availability?.workingHours) {
+      // Default time slots if no availability info
+      return [
+        '08:00 AM', '09:00 AM', '10:00 AM', '11:00 AM',
+        '12:00 PM', '01:00 PM', '02:00 PM', '03:00 PM',
+        '04:00 PM', '05:00 PM'
+      ];
+    }
+
+    const { start, end } = service.availability.workingHours;
+    const timeSlots = [];
+    
+    // Convert start and end times to 24-hour format
+    const [startHour] = start.split(':').map(Number);
+    const [endHour] = end.split(':').map(Number);
+    
+    // Generate hourly slots from start to end
+    for (let hour = startHour; hour < endHour; hour++) {
+      const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      const period = hour < 12 ? 'AM' : 'PM';
+      timeSlots.push(`${hour12.toString().padStart(2, '0')}:00 ${period}`);
+    }
+    
+    return timeSlots;
+  };
+
+  const timeSlots = getTimeSlots();
 
   // Load service details on component mount
   useEffect(() => {
@@ -142,41 +167,191 @@ const BookingFormScreen = ({ navigation, route }) => {
       // If still no provider ID, create a more meaningful fallback
       const finalProviderId = providerId || `fallback-${serviceId.slice(-8)}`;
       
-      // Prepare booking data
+      // Convert time format to match backend expectations
+      const convertTimeFormat = (timeStr) => {
+        // Convert "10:00 AM" to "10:00"
+        const [time, period] = timeStr.split(' ');
+        const [hours, minutes] = time.split(':');
+        let hour24 = parseInt(hours);
+        
+        if (period === 'PM' && hour24 !== 12) {
+          hour24 += 12;
+        } else if (period === 'AM' && hour24 === 12) {
+          hour24 = 0;
+        }
+        
+        return `${hour24.toString().padStart(2, '0')}:${minutes}`;
+      };
+      
+      const startTime = convertTimeFormat(formData.selectedTime);
+      const [hours, minutes] = startTime.split(':').map(Number);
+      const endTime = `${(hours + 2).toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`; // Default 2 hour service
+      
+      // Convert date from MM/DD/YYYY to ISO8601 format
+      const convertToISODate = (dateStr) => {
+        const [month, day, year] = dateStr.split('/');
+        return new Date(year, month - 1, day).toISOString().split('T')[0];
+      };
+      
+      // Parse address into components (basic parsing)
+      const parseAddress = (fullAddress) => {
+        // Simple address parsing - in a real app, you'd use a geocoding service
+        const parts = fullAddress.split(',').map(p => p.trim());
+        return {
+          street: parts[0] || fullAddress,
+          city: parts[1] || 'Unknown',
+          state: parts[2] || 'Unknown',
+          zipCode: parts[3] || '00000'
+        };
+      };
+      
+      const addressComponents = parseAddress(formData.address);
+      const isoDate = convertToISODate(formData.selectedDate);
+      
+      // First, check available time slots for the selected date
+      console.log('🕐 Checking available slots for date:', isoDate);
+      try {
+        const availableSlotsResponse = await BookingsAPI.getAvailableSlots(serviceId, isoDate);
+        console.log('🕐 Available slots:', availableSlotsResponse);
+        
+        // Check if our selected time is in the available slots
+        const selectedTime24h = startTime;
+        const isTimeAvailable = availableSlotsResponse?.data?.availableSlots?.some(slot => 
+          slot.startTime === selectedTime24h
+        );
+        
+        if (!isTimeAvailable) {
+          console.log('⚠️ Selected time not available. Available slots:', availableSlotsResponse?.data?.availableSlots);
+          Alert.alert(
+            'Time Slot Not Available',
+            'The selected time slot is not available. Please choose a different time.',
+            [{ text: 'OK' }]
+          );
+          setLoading(false);
+          return;
+        }
+      } catch (slotError) {
+        console.log('⚠️ Could not check available slots:', slotError.message);
+        // Continue with booking attempt even if slot check fails
+      }
+      
+      // Prepare booking data to match backend schema exactly
+      // Note: providerId is NOT sent - backend determines it from the service
       const bookingData = {
         serviceId,
-        providerId: finalProviderId,
-        scheduledDate: formData.selectedDate,
-        scheduledTime: formData.selectedTime,
-        address: formData.address,
-        contactPhone: formData.contactPhone,
-        specialInstructions: formData.specialInstructions,
-        estimatedPrice: service?.startingPrice || service?.price || 0,
+        scheduledDate: isoDate,
+        scheduledTime: {
+          start: startTime,
+          end: endTime
+        },
+        location: {
+          address: {
+            street: addressComponents.street,
+            city: addressComponents.city,
+            state: addressComponents.state,
+            zipCode: addressComponents.zipCode
+          }
+        },
+        serviceRequirements: formData.specialInstructions,
+        payment: {
+          method: 'credit_card' // Use valid payment method from backend enum
+        }
       };
       
       console.log('📋 Creating booking with data:', bookingData);
       
       // Create booking via API
+      console.log('📡 Calling BookingsAPI.createBooking with data:', bookingData);
       const createdBooking = await BookingsAPI.createBooking(bookingData);
       
-      // Update Redux state
-      dispatch(createNewBooking(createdBooking));
+      console.log('✅ Booking created successfully:', createdBooking);
+      
+      // Update Redux state with the booking data
+      const bookingForRedux = {
+        id: createdBooking?.data?.booking?._id || createdBooking?.data?.booking?.id,
+        bookingNumber: createdBooking?.data?.bookingNumber,
+        serviceTitle: service?.title,
+        serviceIcon: service?.icon,
+        providerName: typeof service?.provider === 'string' ? service?.provider : service?.provider?.name,
+        status: createdBooking?.data?.booking?.status || 'pending',
+        scheduledDate: createdBooking?.data?.booking?.scheduledDate,
+        totalCost: createdBooking?.data?.booking?.pricing?.estimatedCost || service?.price || 35,
+        location: formData.address,
+        hasReview: false,
+        ...createdBooking?.data?.booking
+      };
+      
+      console.log('📋 Adding booking to Redux:', bookingForRedux);
+      dispatch(addBooking(bookingForRedux));
+      
+      // Extract booking ID from the response
+      const bookingId = createdBooking?.data?.booking?._id || 
+                       createdBooking?.data?.booking?.id || 
+                       createdBooking?.booking?._id || 
+                       createdBooking?.booking?.id || 
+                       createdBooking?.id || 
+                       createdBooking?._id;
+      
+      console.log('🆔 Extracted booking ID:', bookingId);
+      
+      // Extract amount from booking response or fallback to service price
+      const bookingAmount = createdBooking?.data?.booking?.pricing?.estimatedCost || 
+                           createdBooking?.data?.booking?.pricing?.totalAmount ||
+                           service?.price || 
+                           parseFloat(service?.startingPrice?.replace(/[^0-9.]/g, '')) || 
+                           35;
+      
+      console.log('💰 Extracted amount:', bookingAmount, 'Type:', typeof bookingAmount);
+      
+      const navigationParams = {
+        bookingId: bookingId,
+        amount: bookingAmount,
+        serviceName: service?.title || service?.name || 'Service',
+      };
+      
+      console.log('🧭 Navigating to Payment with params:', navigationParams);
       
       setLoading(false);
       
-      // Navigate to payment screen
-      navigation.navigate('Payment', {
-        bookingId: createdBooking.id,
-        amount: createdBooking.estimatedPrice || service?.startingPrice || 80,
-        serviceName: service?.title || service?.name || 'Service',
-      });
+      try {
+        // Navigate to payment screen
+        navigation.navigate('Payment', navigationParams);
+        console.log('✅ Navigation to Payment screen successful');
+      } catch (navError) {
+        console.error('❌ Navigation error:', navError);
+        // Show success message even if navigation fails
+        Alert.alert(
+          'Booking Created!',
+          `Your booking has been created successfully. Booking number: ${createdBooking?.data?.bookingNumber || 'N/A'}`,
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+      }
       
     } catch (error) {
       console.error('❌ Error creating booking:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      });
+      
       setLoading(false);
+      
+      // Show detailed error information
+      let errorMessage = 'Failed to create booking. Please try again.';
+      if (error.message) {
+        if (error.message.includes('Validation failed')) {
+          errorMessage = 'Please check your booking details and try again.';
+        } else if (error.message.includes('Network')) {
+          errorMessage = 'Network error. Please check your connection and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       Alert.alert(
         'Booking Error',
-        error.message || 'Failed to create booking. Please try again.',
+        errorMessage,
         [{ text: 'OK' }]
       );
     }
@@ -256,6 +431,16 @@ const BookingFormScreen = ({ navigation, route }) => {
             value={formData.selectedDate}
             onChangeText={(value) => handleInputChange('selectedDate', value)}
           />
+          <Text style={styles.helperText}>
+            Please book at least {service?.availability?.advanceBookingDays || 1} day(s) in advance
+          </Text>
+          {service?.availability?.workingDays && (
+            <Text style={styles.helperText}>
+              Available: {service.availability.workingDays.map(day => 
+                day.charAt(0).toUpperCase() + day.slice(1)
+              ).join(', ')}
+            </Text>
+          )}
         </View>
 
         {/* Time Selection */}
@@ -402,6 +587,12 @@ const styles = StyleSheet.create({
     fontWeight: FONTS.weightSemiBold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.md,
+  },
+  helperText: {
+    fontSize: FONTS.xs,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.sm,
+    fontStyle: 'italic',
   },
   
   // Time Slots

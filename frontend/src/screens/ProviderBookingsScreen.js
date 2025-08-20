@@ -11,7 +11,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import BookingsAPI from '../services/bookingsApi';
@@ -20,6 +20,7 @@ import { useAppDispatch, useAuth } from '../store/hooks';
 const ProviderBookingsScreen = ({ navigation }) => {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   
   const [bookings, setBookings] = useState([]);
   const [selectedTab, setSelectedTab] = useState('all');
@@ -225,7 +226,7 @@ const ProviderBookingsScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       
       {/* Header */}
@@ -291,7 +292,7 @@ const ProviderBookingsScreen = ({ navigation }) => {
       ) : (
         <EmptyState />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 

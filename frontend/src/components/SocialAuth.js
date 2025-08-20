@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 import SecurityAPI from '../services/securityApi';
+import { TOKEN_STORAGE_KEY } from '../config/api';
 
 
 
@@ -50,7 +51,7 @@ export const SocialLoginButtons = ({ onSuccess, loading = false }) => {
 
         if (token && refreshToken) {
           // Store tokens and user data
-          await AsyncStorage.setItem('userToken', token);
+          await AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
           await AsyncStorage.setItem('refreshToken', refreshToken);
           
           Alert.alert('Success', `${provider} login successful!`);
@@ -324,7 +325,7 @@ export const OAuthSuccessHandler = ({ route }) => {
       const { token, refreshToken } = route.params;
       
       // Store tokens
-      AsyncStorage.setItem('userToken', token);
+      AsyncStorage.setItem(TOKEN_STORAGE_KEY, token);
       AsyncStorage.setItem('refreshToken', refreshToken);
       
       // Navigate back or show success

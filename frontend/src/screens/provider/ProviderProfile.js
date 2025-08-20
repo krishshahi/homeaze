@@ -1,266 +1,212 @@
-import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
-  Switch,
+  StatusBar,
+  Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
-const ProviderProfile = () => {
-  const navigation = useNavigation();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [instantBookingEnabled, setInstantBookingEnabled] = useState(false);
-
-  const mockData = {
-    profile: {
-      name: "John's Cleaning Service",
-      rating: 4.8,
-      reviews: 245,
-      completedJobs: 1240,
-      memberSince: 'January 2023',
-      verificationStatus: {
-        identity: true,
-        background: true,
-        insurance: true,
-        professional: true,
-      },
-    },
-    stats: {
-      responseRate: '98%',
-      completionRate: '96%',
-      onTimeRate: '95%',
-      satisfaction: '4.9',
-    },
+const ProviderProfile = ({ navigation }) => {
+  const user = {
+    name: 'John\'s Cleaning Service',
+    email: 'john.provider@example.com',
+    phone: '+1 (555) 987-6543',
+    address: '456 Business Ave, City, State 12345',
+    joinDate: 'January 2023',
   };
 
   const menuItems = [
     {
-      id: 'business',
-      title: 'Business Information',
-      icon: 'briefcase',
-      screen: 'BusinessInfo',
+      id: 'edit-profile',
+      title: 'Edit Profile',
+      icon: 'person-outline',
+      onPress: () => navigation.navigate('EditProfile'),
     },
     {
-      id: 'services',
+      id: 'services-pricing',
       title: 'Services & Pricing',
-      icon: 'tag',
-      screen: 'ServicesManagement',
+      icon: 'pricetags-outline',
+      onPress: () => Alert.alert('Services & Pricing', 'Feature coming soon!'),
     },
     {
       id: 'availability',
       title: 'Availability',
-      icon: 'calendar',
-      screen: 'ProviderAvailability',
+      icon: 'calendar-outline',
+      onPress: () => Alert.alert('Availability', 'Feature coming soon!'),
     },
     {
-      id: 'documents',
-      title: 'Documents & Licenses',
-      icon: 'file-text',
-      screen: 'Documents',
-    },
-    {
-      id: 'bank',
-      title: 'Bank & Payments',
-      icon: 'credit-card',
-      screen: 'PaymentSettings',
-    },
-    {
-      id: 'reviews',
-      title: 'Reviews & Ratings',
-      icon: 'star',
-      screen: 'Reviews',
-      badge: '2 new',
+      id: 'payment-settings',
+      title: 'Payment Settings',
+      icon: 'card-outline',
+      onPress: () => navigation.navigate('PaymentMethods'),
     },
     {
       id: 'notifications',
-      title: 'Notification Settings',
-      icon: 'bell',
-      screen: 'NotificationSettings',
+      title: 'Notifications',
+      icon: 'notifications-outline',
+      badge: 2,
+      onPress: () => navigation.navigate('Notifications'),
     },
     {
-      id: 'support',
+      id: 'security',
+      title: 'Security Settings',
+      icon: 'shield-outline',
+      onPress: () => navigation.navigate('SecuritySettings'),
+    },
+    {
+      id: 'help',
       title: 'Help & Support',
-      icon: 'help-circle',
-      screen: 'Support',
+      icon: 'help-circle-outline',
+      onPress: () => Alert.alert('Help & Support', 'Feature coming soon!'),
+    },
+    {
+      id: 'about',
+      title: 'About',
+      icon: 'information-circle-outline',
+      onPress: () => Alert.alert('About', 'HomeAze v1.0.0\nProvider App'),
     },
   ];
 
-  const renderVerificationBadge = (title, isVerified) => (
-    <View
-      style={[
-        styles.verificationBadge,
-        isVerified ? styles.verifiedBadge : styles.unverifiedBadge,
-      ]}
-    >
-      <Icon
-        name={isVerified ? 'check-circle' : 'alert-circle'}
-        size={16}
-        color={isVerified ? '#4CAF50' : '#FFC107'}
-      />
-      <Text
-        style={[
-          styles.verificationText,
-          isVerified ? styles.verifiedText : styles.unverifiedText,
-        ]}
-      >
-        {title}
-      </Text>
-    </View>
-  );
-
-  const renderMenuItem = (item) => (
-    <TouchableOpacity
-      key={item.id}
-      style={styles.menuItem}
-      onPress={() => navigation.navigate(item.screen)}
-    >
-      <View style={styles.menuItemLeft}>
-        <Icon name={item.icon} size={24} color="#666" />
-        <Text style={styles.menuItemTitle}>{item.title}</Text>
-      </View>
-      <View style={styles.menuItemRight}>
-        {item.badge && <Text style={styles.badge}>{item.badge}</Text>}
-        <Icon name="chevron-right" size={24} color="#666" />
-      </View>
-    </TouchableOpacity>
-  );
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Logout', 
+          style: 'destructive',
+          onPress: () => {
+            // Add logout logic here
+            navigation.navigate('Login');
+          }
+        },
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+      {/* Header */}
+      <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
+        <StatusBar barStyle="light-content" backgroundColor="#3B82F6" />
+        <LinearGradient
+          colors={['#3B82F6', '#2563EB']}
+          style={styles.header}
         >
-          <Icon name="arrow-left" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.title}>Profile</Text>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => navigation.navigate('EditProfile')}
-        >
-          <Icon name="edit-2" size={20} color="#2196F3" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
-        <View style={styles.profileSection}>
-          <View style={styles.profileHeader}>
-            <Image
-              source={require('../../assets/images/profile-placeholder.jpg')}
-              style={styles.profileImage}
-            />
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{mockData.profile.name}</Text>
-              <View style={styles.ratingContainer}>
-                <Icon name="star" size={16} color="#FFC107" />
-                <Text style={styles.rating}>{mockData.profile.rating}</Text>
-                <Text style={styles.reviews}>
-                  ({mockData.profile.reviews} reviews)
+          <View style={styles.headerContent}>
+            <View style={styles.profileSection}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>
+                  {user.name.charAt(0).toUpperCase()}
                 </Text>
               </View>
-              <Text style={styles.memberSince}>
-                Member since {mockData.profile.memberSince}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.verificationSection}>
-            <Text style={styles.sectionTitle}>Verifications</Text>
-            <View style={styles.verificationBadges}>
-              {renderVerificationBadge(
-                'ID Verified',
-                mockData.profile.verificationStatus.identity
-              )}
-              {renderVerificationBadge(
-                'Background Check',
-                mockData.profile.verificationStatus.background
-              )}
-              {renderVerificationBadge(
-                'Insurance',
-                mockData.profile.verificationStatus.insurance
-              )}
-              {renderVerificationBadge(
-                'Professional License',
-                mockData.profile.verificationStatus.professional
-              )}
-            </View>
-          </View>
-
-          <View style={styles.statsSection}>
-            <Text style={styles.sectionTitle}>Performance</Text>
-            <View style={styles.statsGrid}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {mockData.stats.responseRate}
-                </Text>
-                <Text style={styles.statLabel}>Response Rate</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {mockData.stats.completionRate}
-                </Text>
-                <Text style={styles.statLabel}>Completion Rate</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{mockData.stats.onTimeRate}</Text>
-                <Text style={styles.statLabel}>On-time Rate</Text>
-              </View>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>
-                  {mockData.stats.satisfaction}
-                </Text>
-                <Text style={styles.statLabel}>Satisfaction</Text>
+              
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>{user.name}</Text>
+                <Text style={styles.userEmail}>{user.email}</Text>
+                <Text style={styles.userJoinDate}>Member since {user.joinDate}</Text>
               </View>
             </View>
           </View>
+        </LinearGradient>
+      </SafeAreaView>
 
-          <View style={styles.quickSettings}>
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <Icon name="bell" size={20} color="#666" />
-                <Text style={styles.settingText}>Push Notifications</Text>
+      {/* Content */}
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Quick Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>45</Text>
+            <Text style={styles.statLabel}>Total Jobs</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>42</Text>
+            <Text style={styles.statLabel}>Completed</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>4.9</Text>
+            <Text style={styles.statLabel}>Average Rating</Text>
+          </View>
+        </View>
+
+        {/* Account Info */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Business Information</Text>
+          
+          <View style={styles.infoCard}>
+            <View style={styles.infoItem}>
+              <Ionicons name="call-outline" size={20} color="#6B7280" />
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoLabel}>Phone</Text>
+                <Text style={styles.infoValue}>{user.phone}</Text>
               </View>
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
-                trackColor={{ false: '#CCCCCC', true: '#4CAF50' }}
-                thumbColor="#FFFFFF"
-              />
             </View>
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <Icon name="zap" size={20} color="#666" />
-                <Text style={styles.settingText}>Instant Booking</Text>
+            
+            <View style={styles.infoItem}>
+              <Ionicons name="location-outline" size={20} color="#6B7280" />
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoLabel}>Address</Text>
+                <Text style={styles.infoValue}>{user.address}</Text>
               </View>
-              <Switch
-                value={instantBookingEnabled}
-                onValueChange={setInstantBookingEnabled}
-                trackColor={{ false: '#CCCCCC', true: '#4CAF50' }}
-                thumbColor="#FFFFFF"
-              />
             </View>
           </View>
         </View>
 
-        <View style={styles.menuSection}>
-          {menuItems.map(renderMenuItem)}
+        {/* Menu Items */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Settings</Text>
+          
+          <View style={styles.menuContainer}>
+            {menuItems.map((item, index) => (
+              <TouchableOpacity
+                key={item.id}
+                style={[
+                  styles.menuItem,
+                  index === menuItems.length - 1 && styles.lastMenuItem
+                ]}
+                onPress={item.onPress}
+              >
+                <View style={styles.menuItemLeft}>
+                  <View style={styles.menuIconContainer}>
+                    <Ionicons name={item.icon} size={22} color="#3B82F6" />
+                  </View>
+                  <Text style={styles.menuItemTitle}>{item.title}</Text>
+                </View>
+                
+                <View style={styles.menuItemRight}>
+                  {item.badge && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{item.badge}</Text>
+                    </View>
+                  )}
+                  <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => {
-            // Handle logout
-          }}
-        >
-          <Icon name="log-out" size={20} color="#F44336" />
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+        {/* Logout Button */}
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* App Version */}
+        <View style={styles.versionContainer}>
+          <Text style={styles.versionText}>HomeAze Provider v1.0.0</Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -269,205 +215,248 @@ const ProviderProfile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F8FAFC',
   },
+  
+  headerSafeArea: {
+    backgroundColor: '#3B82F6',
+  },
+  
   header: {
+    paddingTop: 8,
+    paddingBottom: 24,
+  },
+  
+  headerContent: {
+    paddingHorizontal: 20,
+  },
+  
+  profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    gap: 16,
   },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  editButton: {
-    padding: 8,
-  },
-  content: {
-    flex: 1,
-  },
-  profileSection: {
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    marginBottom: 8,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    marginBottom: 24,
-  },
-  profileImage: {
+  
+  avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    marginRight: 16,
-  },
-  profileInfo: {
-    flex: 1,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
-  },
-  profileName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
   },
-  rating: {
-    marginLeft: 4,
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  reviews: {
-    marginLeft: 4,
-    fontSize: 14,
-    color: '#666',
-  },
-  memberSince: {
-    fontSize: 14,
-    color: '#666',
-  },
-  verificationSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  verificationBadges: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -4,
-  },
-  verificationBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    margin: 4,
-  },
-  verifiedBadge: {
-    backgroundColor: '#E8F5E9',
-  },
-  unverifiedBadge: {
-    backgroundColor: '#FFF8E1',
-  },
-  verificationText: {
-    marginLeft: 4,
-    fontSize: 12,
+  
+  avatarText: {
+    fontSize: 32,
+    color: '#3B82F6',
     fontWeight: 'bold',
   },
-  verifiedText: {
-    color: '#4CAF50',
+  
+  userInfo: {
+    flex: 1,
   },
-  unverifiedText: {
-    color: '#FFC107',
-  },
-  statsSection: {
-    marginBottom: 24,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginHorizontal: -8,
-  },
-  statItem: {
-    width: '50%',
-    padding: 8,
-  },
-  statValue: {
+  
+  userName: {
     fontSize: 24,
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 4,
   },
-  statLabel: {
+  
+  userEmail: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.9,
+    marginBottom: 2,
+  },
+  
+  userJoinDate: {
     fontSize: 14,
-    color: '#666',
+    color: '#FFFFFF',
+    opacity: 0.7,
   },
-  quickSettings: {
-    borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
-    paddingTop: 16,
+  
+  content: {
+    flex: 1,
   },
-  settingItem: {
+  
+  statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 12,
+    paddingVertical: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  
+  statItem: {
+    flex: 1,
     alignItems: 'center',
+  },
+  
+  statDivider: {
+    width: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 8,
+  },
+  
+  statValue: {
+    fontSize: 20,
+    color: '#1F2937',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  
+  statLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  
+  section: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  
+  sectionTitle: {
+    fontSize: 18,
+    color: '#1F2937',
+    fontWeight: 'bold',
     marginBottom: 16,
   },
-  settingLeft: {
+  
+  infoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    gap: 16,
+  },
+  
+  infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
-  settingText: {
-    marginLeft: 12,
-    fontSize: 16,
-    color: '#333',
+  
+  infoTextContainer: {
+    flex: 1,
   },
-  menuSection: {
+  
+  infoLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  
+  infoValue: {
+    fontSize: 14,
+    color: '#1F2937',
+    fontWeight: '500',
+  },
+  
+  menuContainer: {
     backgroundColor: '#FFFFFF',
-    marginBottom: 24,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
+  
   menuItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: '#F3F4F6',
   },
+  
+  lastMenuItem: {
+    borderBottomWidth: 0,
+  },
+  
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
+  
+  menuIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#F0F9FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
   menuItemTitle: {
-    marginLeft: 12,
     fontSize: 16,
-    color: '#333',
+    color: '#1F2937',
+    fontWeight: '500',
   },
+  
   menuItemRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
+  
   badge: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#EF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+  
+  badgeText: {
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: 'bold',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 8,
   },
+  
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFFFFF',
-    padding: 16,
-    marginBottom: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#FEE2E2',
   },
+  
   logoutText: {
-    marginLeft: 8,
     fontSize: 16,
-    color: '#F44336',
-    fontWeight: 'bold',
+    color: '#EF4444',
+    fontWeight: '600',
+  },
+  
+  versionContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  
+  versionText: {
+    fontSize: 12,
+    color: '#9CA3AF',
   },
 });
 

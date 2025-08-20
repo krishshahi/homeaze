@@ -1,9 +1,9 @@
 // Enhanced Bookings API service - Production Ready
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
+import { API_BASE_URL, TOKEN_STORAGE_KEY } from '../config/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const WEBSOCKET_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
+const WEBSOCKET_URL = API_BASE_URL.replace(/\/api$/, '');
 
 class BookingsAPI {
   static socket = null;
@@ -14,8 +14,7 @@ class BookingsAPI {
    */
   static async getAuthHeaders() {
     try {
-      // Support both keys to avoid auth mismatches
-      const token = (await AsyncStorage.getItem('token')) || (await AsyncStorage.getItem('userToken'));
+      const token = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
       return {
         'Content-Type': 'application/json',
         'Authorization': token ? `Bearer ${token}` : '',
@@ -32,7 +31,7 @@ class BookingsAPI {
    */
   static async initializeWebSocket(onBookingUpdate, onNotification) {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
       if (!token) return;
 
       this.socket = io(WEBSOCKET_URL, {
@@ -168,7 +167,7 @@ class BookingsAPI {
       const headers = await this.getAuthHeaders();
       
       const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/status`, {
-        method: 'PUT',
+        method: 'PATCH',
         headers,
         body: JSON.stringify({ status, providerNotes }),
       });

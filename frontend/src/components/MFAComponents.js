@@ -19,6 +19,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { TOKEN_STORAGE_KEY, API_BASE_URL } from '../config/api';
 
 const { width } = Dimensions.get('window');
 
@@ -37,10 +38,10 @@ export const MFASetupScreen = ({ visible, onClose, onSetupComplete }) => {
     try {
       setLoading(true);
       // API call to initiate MFA setup
-      const response = await fetch('/api/auth/mfa/setup', {
+      const response = await fetch(`${API_BASE_URL}/auth/mfa/setup`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${await SecureStore.getItemAsync('authToken')}`,
+          'Authorization': `Bearer ${await SecureStore.getItemAsync(TOKEN_STORAGE_KEY)}`,
           'Content-Type': 'application/json'
         }
       });
@@ -70,10 +71,10 @@ export const MFASetupScreen = ({ visible, onClose, onSetupComplete }) => {
     
     try {
       setLoading(true);
-      const response = await fetch('/api/auth/mfa/verify-setup', {
+      const response = await fetch(`${API_BASE_URL}/auth/mfa/verify-setup`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${await SecureStore.getItemAsync('authToken')}`,
+          'Authorization': `Bearer ${await SecureStore.getItemAsync(TOKEN_STORAGE_KEY)}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -317,7 +318,7 @@ export const MFAVerificationModal = ({ visible, onClose, onVerify, tempToken }) 
     
     try {
       setLoading(true);
-      const response = await fetch('/api/auth/mfa/verify', {
+      const response = await fetch(`${API_BASE_URL}/auth/mfa/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -466,7 +467,7 @@ export const PasswordStrengthIndicator = ({ password, onStrengthChange }) => {
   
   const checkPasswordStrength = async (pwd) => {
     try {
-      const response = await fetch('/api/auth/validate-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/validate-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

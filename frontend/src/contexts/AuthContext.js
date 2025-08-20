@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
 
   const loadStoredAuth = async () => {
     try {
-      const token = await AsyncStorage.getItem('auth_token');
+      const token = await AsyncStorage.getItem('token');
       if (token) {
         // Set token in API headers
         api.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Error loading stored auth:', error);
-      await AsyncStorage.removeItem('auth_token');
+      await AsyncStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data.data;
       
       // Store token
-      await AsyncStorage.setItem('auth_token', token);
+      await AsyncStorage.setItem('token', token);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
       
       setUser(user);
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data.data;
       
       // Store token
-      await AsyncStorage.setItem('auth_token', token);
+      await AsyncStorage.setItem('token', token);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
       
       setUser(user);
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Logout error:', error);
     } finally {
       // Clear local storage and state
-      await AsyncStorage.removeItem('auth_token');
+      await AsyncStorage.removeItem('token');
       delete api.defaults.headers.common.Authorization;
       setUser(null);
     }
@@ -122,7 +122,7 @@ export const AuthProvider = ({ children }) => {
       const { token, user } = response.data.data;
       
       // Store token
-      await AsyncStorage.setItem('auth_token', token);
+      await AsyncStorage.setItem('token', token);
       api.defaults.headers.common.Authorization = `Bearer ${token}`;
       
       setUser(user);

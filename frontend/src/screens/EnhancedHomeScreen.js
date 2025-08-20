@@ -113,8 +113,21 @@ const EnhancedHomeScreen = ({ navigation }) => {
   };
 
   const handleServicePress = (service) => {
-    console.log('Service selected:', service.title);
-    navigation.navigate('ServiceDetails', { serviceId: service.id });
+    console.log('Service selected:', service.title || service.serviceTitle, 'ID:', service._id || service.id);
+    
+    // Check if this is a booking/upcoming service or a regular service
+    if (service.serviceTitle && service.scheduledDate) {
+      // This is an upcoming service (booking), navigate to booking details
+      console.log('Navigating to BookingDetails for booking ID:', service.id);
+      navigation.navigate('BookingDetails', { bookingId: service.id });
+    } else {
+      // This is a regular service, navigate to service details
+      console.log('Navigating to ServiceDetails for service ID:', service._id || service.id);
+      navigation.navigate('ServiceDetails', { 
+        serviceId: service._id || service.id,
+        service: service 
+      });
+    }
   };
 
   const handleFavoritePress = (service) => {

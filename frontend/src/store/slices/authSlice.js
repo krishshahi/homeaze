@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-import { apiPost, API_ENDPOINTS } from '../../config/api';
+import { apiPost, API_ENDPOINTS, TOKEN_STORAGE_KEY } from '../../config/api';
 
 // Async thunks for API calls
 export const loginUser = createAsyncThunk(
@@ -17,7 +17,7 @@ export const loginUser = createAsyncThunk(
       
       if (response.data && response.data.token) {
         console.log('🔐 Storing token...');
-        await AsyncStorage.setItem('userToken', response.data.token);
+        await AsyncStorage.setItem(TOKEN_STORAGE_KEY, response.data.token);
         await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
         console.log('✅ Token stored');
       }
@@ -36,7 +36,7 @@ export const registerUser = createAsyncThunk(
       const response = await apiPost(API_ENDPOINTS.AUTH.REGISTER, userData);
       
       if (response.data && response.data.token) {
-        await AsyncStorage.setItem('userToken', response.data.token);
+        await AsyncStorage.setItem(TOKEN_STORAGE_KEY, response.data.token);
         await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
       }
       
@@ -66,7 +66,7 @@ export const loadStoredAuth = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       console.log('🔍 Loading stored auth...');
-      const token = await AsyncStorage.getItem('userToken');
+      const token = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
       const userData = await AsyncStorage.getItem('userData');
       
       console.log('🔍 Stored auth data:', { 
@@ -98,7 +98,7 @@ export const logoutUser = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       console.log('🚪 Clearing stored auth data...');
-      await AsyncStorage.removeItem('userToken');
+      await AsyncStorage.removeItem(TOKEN_STORAGE_KEY);
       await AsyncStorage.removeItem('userData');
       console.log('✅ Auth data cleared successfully');
       return null;

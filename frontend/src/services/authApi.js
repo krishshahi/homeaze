@@ -1,5 +1,5 @@
 // Authentication API service
-const API_BASE_URL = 'http://localhost:5000/api'; // Backend server URL
+const API_BASE_URL = 'http://192.168.1.129:3001/api'; // Backend server URL
 
 class AuthAPI {
   /**

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/Users/bijayneupane/Desktop/untitled folder 2/homeaze/backend/logs/.d96b2eb4eb0f7312b682c00afea085816f279298-audit.json",
+    "files": [
+        {
+            "date": 1755691021610,
+            "name": "/Users/bijayneupane/Desktop/untitled folder 2/homeaze/backend/logs/error-2025-08-20.log",
+            "hash": "9687b32df3c2ca4d5de745ebc64334c2ed33a28bffa2c281f98c70b768907a0d"
+        }
+    ],
+    "hashType": "sha256"
+}

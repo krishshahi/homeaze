@@ -23,8 +23,13 @@ const PORT = process.env.PORT || 5000;
 
 // Security middleware
 app.use(helmet());
+// Configure CORS to handle multiple origins
+const corsOrigins = process.env.CLIENT_URL 
+  ? process.env.CLIENT_URL.split(',').map(url => url.trim())
+  : ['http://localhost:8081'];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:8081',
+  origin: corsOrigins,
   credentials: true
 }));
 

@@ -11,12 +11,21 @@ import {
   Image,
   Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import ProvidersAPI from '../services/providersApi';
 
 const ProvidersScreen = ({ navigation }) => {
+  console.log('🚀 ProvidersScreen loaded with modern UI!');
+  console.log('📱 Current timestamp:', new Date().toISOString());
+  
+  // Use safe area insets for precise control
+  const insets = useSafeAreaInsets();
+  console.log('📐 Safe area insets:', insets);
+  
   const [providers, setProviders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -251,64 +260,100 @@ const ProvidersScreen = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Service Providers</Text>
-        <TouchableOpacity onPress={() => setShowFilters(true)}>
-          <Text style={styles.filterIcon}>🎛️</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>🔍</Text>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search providers..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor={COLORS.textMuted}
-          />
-        </View>
-      </View>
-
-      {/* Categories */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContainer}
+      {/* Modern Header with Gradient */}
+      <LinearGradient
+        colors={[COLORS.primary, COLORS.primaryDark || COLORS.primary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerGradient}
       >
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category.id}
-            style={[
-              styles.categoryChip,
-              selectedCategory === category.id && styles.selectedCategoryChip,
-            ]}
-            onPress={() => handleCategoryPress(category)}
-          >
-            <Text style={styles.categoryIcon}>{category.icon}</Text>
-            <Text
-              style={[
-                styles.categoryTitle,
-                selectedCategory === category.id && styles.selectedCategoryTitle,
-              ]}
+        <View style={styles.headerContent}>
+          <View style={styles.headerTop}>
+            <TouchableOpacity 
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
             >
-              {category.title}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+              <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+            </TouchableOpacity>
+            
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle}>Service Providers</Text>
+              <Text style={styles.headerSubtitle}>
+                {sortedProviders.length} providers found
+              </Text>
+            </View>
 
-      {/* Results Count */}
-      <View style={styles.resultsContainer}>
-        <Text style={styles.resultsText}>
-          {sortedProviders.length} providers found
-        </Text>
+            <TouchableOpacity 
+              style={styles.filterButton}
+              onPress={() => setShowFilters(true)}
+            >
+              <Ionicons name="options-outline" size={24} color={COLORS.white} />
+              {(selectedCategory || sortBy !== 'rating') && (
+                <View style={styles.filterBadge} />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Modern Search Bar */}
+          <View style={styles.searchSection}>
+            <View style={styles.modernSearchBar}>
+              <Ionicons name="search-outline" size={20} color={COLORS.textMuted} style={styles.searchIconModern} />
+              <TextInput
+                style={styles.modernSearchInput}
+                placeholder="Search providers..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor={COLORS.textMuted}
+              />
+              {searchQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <Ionicons name="close-circle" size={20} color={COLORS.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* Modern Categories Section */}
+      <View style={styles.categoriesSection}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContainer}
+        >
+          {categories.map((category) => (
+            <TouchableOpacity
+              key={category.id}
+              style={[
+                styles.modernCategoryChip,
+                selectedCategory === category.id && styles.modernCategoryChipActive,
+              ]}
+              onPress={() => handleCategoryPress(category)}
+            >
+              <View style={[
+                styles.categoryIconContainer,
+                selectedCategory === category.id && styles.categoryIconContainerActive,
+              ]}>
+                <Text style={[
+                  styles.modernCategoryIcon,
+                  selectedCategory === category.id && styles.modernCategoryIconActive,
+                ]}>{category.icon}</Text>
+              </View>
+              <Text
+                style={[
+                  styles.modernCategoryTitle,
+                  selectedCategory === category.id && styles.modernCategoryTitleActive,
+                ]}
+              >
+                {category.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Providers List */}
@@ -321,14 +366,136 @@ const ProvidersScreen = ({ navigation }) => {
       />
 
       <FilterModal />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.backgroundSecondary || COLORS.background,
+  },
+  // Modern Header Styles - Compact for Android
+  headerGradient: {
+    paddingTop: SPACING.sm,
+    paddingBottom: SPACING.md,
+  },
+  headerContent: {
+    paddingHorizontal: SPACING.lg,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  backButton: {
+    marginRight: SPACING.md,
+    padding: SPACING.sm,
+  },
+  headerTitleContainer: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: FONTS.xxl || 28,
+    fontWeight: FONTS.weightBold || 'bold',
+    color: COLORS.white,
+    marginBottom: SPACING.xs,
+  },
+  headerSubtitle: {
+    fontSize: FONTS.md || 16,
+    color: COLORS.white,
+    opacity: 0.8,
+  },
+  filterButton: {
+    position: 'relative',
+    padding: SPACING.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: BORDER_RADIUS.md,
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    backgroundColor: COLORS.warning || COLORS.secondary,
+    borderRadius: 4,
+  },
+  // Modern Search Styles
+  searchSection: {
+    marginTop: SPACING.md,
+  },
+  modernSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER_RADIUS.lg,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    ...SHADOWS.light,
+  },
+  searchIconModern: {
+    marginRight: SPACING.sm,
+  },
+  modernSearchInput: {
+    flex: 1,
+    fontSize: FONTS.md || 16,
+    color: COLORS.textPrimary || COLORS.text,
+  },
+  // Modern Categories Styles
+  categoriesSection: {
+    backgroundColor: COLORS.white,
+    marginTop: -SPACING.lg,
+    paddingTop: SPACING.xl,
+    paddingBottom: SPACING.md,
+    ...SHADOWS.light,
+  },
+  categoriesContainer: {
+    paddingHorizontal: SPACING.lg,
+    gap: SPACING.sm,
+  },
+  modernCategoryChip: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.lg,
+    backgroundColor: COLORS.backgroundSecondary || COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border || '#E5E5E5',
+    minWidth: 80,
+    marginRight: SPACING.sm,
+  },
+  modernCategoryChipActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  categoryIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
+  categoryIconContainerActive: {
+    backgroundColor: COLORS.white,
+  },
+  modernCategoryIcon: {
+    fontSize: 16,
+  },
+  modernCategoryIconActive: {
+    fontSize: 16,
+  },
+  modernCategoryTitle: {
+    fontSize: FONTS.sm || 12,
+    fontWeight: FONTS.weightMedium || '500',
+    color: COLORS.textSecondary || COLORS.textMuted,
+    textAlign: 'center',
+  },
+  modernCategoryTitleActive: {
+    color: COLORS.white,
+    fontWeight: FONTS.weightBold || 'bold',
   },
   header: {
     flexDirection: 'row',
@@ -410,7 +577,7 @@ const styles = StyleSheet.create({
   },
   providersList: {
     paddingHorizontal: SPACING.lg,
-    paddingBottom: SPACING.lg,
+    paddingBottom: SPACING.sm,
   },
   providerCard: {
     backgroundColor: COLORS.white,

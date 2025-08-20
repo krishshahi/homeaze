@@ -1,9 +1,17 @@
 const Booking = require('../models/Booking');
 const Service = require('../models/Service');
 const User = require('../models/User');
-const { notificationService } = require('../services/notificationService');
 const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
+
+// Optional notification service - won't crash if not available
+let notificationService = null;
+try {
+  const notificationServiceModule = require('../services/notificationService');
+  notificationService = notificationServiceModule.notificationService;
+} catch (error) {
+  console.warn('Notification service not available:', error.message);
+}
 
 class BookingController {
   
@@ -22,8 +30,8 @@ class BookingController {
         });
       }
 
-      const { serviceId, scheduledDate, scheduledTime, location, serviceRequirements, payment } = req.body;
-      const customerId = req.user.id;
+    const { serviceId, scheduledDate, scheduledTime, location, serviceRequirements, payment } = req.body;
+    const customerId = req.userId;
 
       // Verify service exists and is active
       const service = await Service.findById(serviceId)
@@ -143,8 +151,12 @@ class BookingController {
 
       await session.commitTransaction();
 
-      // Send real-time notification to provider
-      await this.notifyProviderOfNewBooking(booking, service.providerId);
+      // Send real-time notification to provider (non-blocking)
+      try {
+        await this.notifyProviderOfNewBooking(booking, service.providerId);
+      } catch (notificationError) {
+        console.error('Notification failed, but booking was created successfully:', notificationError.message);
+      }
 
       // Populate the booking for response
       const populatedBooking = await Booking.findById(booking._id)
@@ -176,9 +188,9 @@ class BookingController {
   // Provider confirms or rejects a booking
   async updateBookingStatus(req, res) {
     try {
-      const { bookingId } = req.params;
-      const { status, providerNotes } = req.body;
-      const providerId = req.user.id;
+    const { bookingId } = req.params;
+    const { status, providerNotes } = req.body;
+    const providerId = req.userId;
 
       if (!['confirmed', 'cancelled'].includes(status)) {
         return res.status(400).json({
@@ -232,8 +244,12 @@ class BookingController {
 
       await booking.save();
 
-      // Send notification to customer
-      await this.notifyCustomerOfBookingUpdate(booking, status);
+      // Send notification to customer (non-blocking)
+      try {
+        await this.notifyCustomerOfBookingUpdate(booking, status);
+      } catch (notificationError) {
+        console.error('Customer notification failed:', notificationError.message);
+      }
 
       res.json({
         success: true,
@@ -257,7 +273,7 @@ class BookingController {
   async getBookings(req, res) {
     try {
       const { status, page = 1, limit = 10, sortBy = 'createdAt', order = 'desc' } = req.query;
-      const userId = req.user.id;
+      const userId = req.userId;
       const userType = req.user.userType;
 
       // Build filter based on user type
@@ -312,7 +328,7 @@ class BookingController {
   async getBookingById(req, res) {
     try {
       const { bookingId } = req.params;
-      const userId = req.user.id;
+      const userId = req.userId;
 
       const booking = await Booking.findById(bookingId)
         .populate('customerId', 'name email phone avatar address')
@@ -355,7 +371,7 @@ class BookingController {
   async startService(req, res) {
     try {
       const { bookingId } = req.params;
-      const providerId = req.user.id;
+      const providerId = req.userId;
 
       const booking = await Booking.findById(bookingId)
         .populate('customerId', 'name email phone');
@@ -392,16 +408,22 @@ class BookingController {
 
       await booking.save();
 
-      // Notify customer
-      await notificationService.sendTemplateNotification(
-        booking.customerId._id,
-        'service_started',
-        {
-          bookingNumber: booking.bookingNumber,
-          serviceName: booking.serviceDetails.title,
-          providerName: req.user.name
+      // Notify customer (non-blocking)
+      if (notificationService) {
+        try {
+          await notificationService.sendTemplateNotification(
+            booking.customerId._id,
+            'service_started',
+            {
+              bookingNumber: booking.bookingNumber,
+              serviceName: booking.serviceDetails.title,
+              providerName: req.user.name
+            }
+          );
+        } catch (notificationError) {
+          console.error('Service start notification failed:', notificationError.message);
         }
-      );
+      }
 
       res.json({
         success: true,
@@ -423,7 +445,7 @@ class BookingController {
     try {
       const { bookingId } = req.params;
       const { workPerformed, materialUsed, finalCost, beforeImages, afterImages, additionalNotes } = req.body;
-      const providerId = req.user.id;
+      const providerId = req.userId;
 
       const booking = await Booking.findById(bookingId)
         .populate('customerId', 'name email phone');
@@ -480,17 +502,23 @@ class BookingController {
         { $inc: { 'stats.completedBookings': 1 } }
       );
 
-      // Notify customer of completion
-      await notificationService.sendTemplateNotification(
-        booking.customerId._id,
-        'service_completed',
-        {
-          bookingNumber: booking.bookingNumber,
-          serviceName: booking.serviceDetails.title,
-          providerName: req.user.name,
-          finalCost: booking.pricing.finalCost || booking.pricing.estimatedCost
+      // Notify customer of completion (non-blocking)
+      if (notificationService) {
+        try {
+          await notificationService.sendTemplateNotification(
+            booking.customerId._id,
+            'service_completed',
+            {
+              bookingNumber: booking.bookingNumber,
+              serviceName: booking.serviceDetails.title,
+              providerName: req.user.name,
+              finalCost: booking.pricing.finalCost || booking.pricing.estimatedCost
+            }
+          );
+        } catch (notificationError) {
+          console.error('Service completion notification failed:', notificationError.message);
         }
-      );
+      }
 
       res.json({
         success: true,
@@ -512,7 +540,7 @@ class BookingController {
     try {
       const { bookingId } = req.params;
       const { reason } = req.body;
-      const userId = req.user.id;
+      const userId = req.userId;
 
       const booking = await Booking.findById(bookingId)
         .populate('customerId', 'name email phone')
@@ -562,18 +590,24 @@ class BookingController {
 
       await booking.save();
 
-      // Notify the other party
-      const otherParty = isCustomer ? booking.providerId._id : booking.customerId._id;
-      await notificationService.sendTemplateNotification(
-        otherParty,
-        'booking_cancelled',
-        {
-          bookingNumber: booking.bookingNumber,
-          serviceName: booking.serviceDetails.title,
-          cancelledBy: isCustomer ? 'customer' : 'provider',
-          reason: reason || 'No reason provided'
+      // Notify the other party (non-blocking)
+      if (notificationService) {
+        try {
+          const otherParty = isCustomer ? booking.providerId._id : booking.customerId._id;
+          await notificationService.sendTemplateNotification(
+            otherParty,
+            'booking_cancelled',
+            {
+              bookingNumber: booking.bookingNumber,
+              serviceName: booking.serviceDetails.title,
+              cancelledBy: isCustomer ? 'customer' : 'provider',
+              reason: reason || 'No reason provided'
+            }
+          );
+        } catch (notificationError) {
+          console.error('Booking cancellation notification failed:', notificationError.message);
         }
-      );
+      }
 
       res.json({
         success: true,
@@ -598,7 +632,7 @@ class BookingController {
     try {
       const { bookingId } = req.params;
       const { message, attachments } = req.body;
-      const userId = req.user.id;
+      const userId = req.userId;
 
       const booking = await Booking.findById(bookingId)
         .populate('customerId', 'name')
@@ -633,22 +667,28 @@ class BookingController {
 
       await booking.save();
 
-      // Notify the other party
-      const otherParty = booking.customerId._id.toString() === userId ? 
-                        booking.providerId._id : booking.customerId._id;
-      
-      await notificationService.sendNotification({
-        userId: otherParty,
-        title: `New message for booking ${booking.bookingNumber}`,
-        body: message,
-        type: 'booking_message',
-        channels: ['push', 'email'],
-        data: {
-          bookingId: booking._id,
-          bookingNumber: booking.bookingNumber,
-          senderName: req.user.name
+      // Notify the other party (non-blocking)
+      if (notificationService) {
+        try {
+          const otherParty = booking.customerId._id.toString() === userId ? 
+                            booking.providerId._id : booking.customerId._id;
+          
+          await notificationService.sendNotification({
+            userId: otherParty,
+            title: `New message for booking ${booking.bookingNumber}`,
+            body: message,
+            type: 'booking_message',
+            channels: ['push', 'email'],
+            data: {
+              bookingId: booking._id,
+              bookingNumber: booking.bookingNumber,
+              senderName: req.user.name
+            }
+          });
+        } catch (notificationError) {
+          console.error('Message notification failed:', notificationError.message);
         }
-      });
+      }
 
       res.json({
         success: true,
@@ -672,7 +712,7 @@ class BookingController {
   async getMessages(req, res) {
     try {
       const { bookingId } = req.params;
-      const userId = req.user.id;
+      const userId = req.userId;
 
       const booking = await Booking.findById(bookingId)
         .populate('communication.senderId', 'name avatar')
@@ -714,6 +754,11 @@ class BookingController {
 
   // Private helper methods
   async notifyProviderOfNewBooking(booking, provider) {
+    if (!notificationService) {
+      console.log('Notification service not available - skipping provider notification');
+      return;
+    }
+    
     try {
       const customer = await User.findById(booking.customerId).select('name');
       
@@ -736,6 +781,11 @@ class BookingController {
   }
 
   async notifyCustomerOfBookingUpdate(booking, status) {
+    if (!notificationService) {
+      console.log('Notification service not available - skipping customer notification');
+      return;
+    }
+    
     try {
       const provider = await User.findById(booking.providerId).select('name providerProfile.businessName');
       

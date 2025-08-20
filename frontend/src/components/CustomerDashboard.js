@@ -461,18 +461,17 @@ const styles = StyleSheet.create({
   // Enhanced Category Grid
   categoryGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     paddingHorizontal: SPACING.lg,
-    gap: SPACING.md,
+    justifyContent: 'space-between',
   },
   
   categoryCard: {
-    width: (width - SPACING.lg * 2 - SPACING.md) / 2,
+    width: 70,
     backgroundColor: COLORS.backgroundCard,
-    padding: SPACING.lg,
+    padding: SPACING.md,
     borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
-    minHeight: 100,
+    minHeight: 80,
     ...SHADOWS.light,
   },
   

@@ -12,7 +12,7 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import CustomButton from '../components/CustomButton';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -31,6 +31,7 @@ const ToastBanner = ({ message }) => (
 );
 
 const EnhancedProviderServicesScreen = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -408,7 +409,7 @@ const EnhancedProviderServicesScreen = ({ navigation, route }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {!!toastMessage && <ToastBanner message={toastMessage} />}
       {/* Header */}
       <View style={styles.header}>
@@ -538,7 +539,7 @@ const EnhancedProviderServicesScreen = ({ navigation, route }) => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

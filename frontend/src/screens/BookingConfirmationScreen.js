@@ -116,7 +116,10 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
   };
 
   const handleViewBooking = () => {
-    navigation.navigate('BookingsMain');
+    // Navigate to the Bookings tab, then to the BookingsMain screen within that tab
+    navigation.navigate('Bookings', {
+      screen: 'BookingsMain'
+    });
   };
 
   const handleRescheduleBooking = () => {
@@ -147,7 +150,9 @@ const BookingConfirmationScreen = ({ navigation, route }) => {
           onPress: () => {
             // In real app, would cancel the booking
             Alert.alert('Cancelled', 'Your booking has been cancelled.');
-            navigation.navigate('BookingsMain');
+            navigation.navigate('Bookings', {
+              screen: 'BookingsMain'
+            });
           },
         },
         { text: 'Keep Booking', style: 'cancel' },

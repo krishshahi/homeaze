@@ -7,13 +7,19 @@ import {
   Animated,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const EnhancedTabBar = ({ state, descriptors, navigation }) => {
+  const insets = useSafeAreaInsets();
+  // Use safe area insets but with a minimum padding to prevent overlap
+  const bottomPadding = Math.max(insets.bottom, SPACING.sm);
+  console.log('🎯 EnhancedTabBar (Provider) - Bottom padding:', bottomPadding, 'Insets:', insets, 'Platform:', Platform.OS);
+  
   return (
     <View style={styles.container}>
-      <View style={styles.tabBar}>
+      <View style={[styles.tabBar, { paddingBottom: bottomPadding }]}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const label =
@@ -150,7 +156,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: COLORS.white,
     paddingTop: SPACING.sm,
-    paddingBottom: Platform.OS === 'ios' ? SPACING.lg : SPACING.md,
     paddingHorizontal: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,

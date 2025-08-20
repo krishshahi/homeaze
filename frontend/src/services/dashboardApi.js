@@ -1,5 +1,5 @@
 // Dashboard API Service
-import { apiGet } from '../config/api';
+import { apiGet, API_BASE_URL } from '../config/api';
 import throttler from '../utils/requestThrottler';
 
 // Dashboard API endpoints
@@ -97,11 +97,11 @@ export const fetchCompleteDashboardData = async (token) => {
   try {
     // Use staggered batch requests instead of Promise.all to prevent 429 errors
     const requests = [
-      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.OVERVIEW}`, options: { headers: { Authorization: `Bearer ${token}` } } },
-      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.ANALYTICS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
-      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.RECENT_BOOKINGS}?limit=5`, options: { headers: { Authorization: `Bearer ${token}` } } },
-      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.REVENUE_STATS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
-      { url: `http://localhost:5000/api${DASHBOARD_ENDPOINTS.USER_STATS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `${API_BASE_URL}${DASHBOARD_ENDPOINTS.OVERVIEW}`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `${API_BASE_URL}${DASHBOARD_ENDPOINTS.ANALYTICS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `${API_BASE_URL}${DASHBOARD_ENDPOINTS.RECENT_BOOKINGS}?limit=5`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `${API_BASE_URL}${DASHBOARD_ENDPOINTS.REVENUE_STATS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
+      { url: `${API_BASE_URL}${DASHBOARD_ENDPOINTS.USER_STATS}`, options: { headers: { Authorization: `Bearer ${token}` } } },
     ];
 
     const results = await throttler.batchRequests(requests, 300); // 300ms stagger

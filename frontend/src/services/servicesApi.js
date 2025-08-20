@@ -1,8 +1,7 @@
 // Services API service
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import throttler from '../utils/requestThrottler';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+import { API_BASE_URL, TOKEN_STORAGE_KEY } from '../config/api';
 
 class ServicesAPI {
   /**
@@ -11,7 +10,7 @@ class ServicesAPI {
    */
   static async getAuthHeaders() {
     try {
-      const token = (await AsyncStorage.getItem('token')) || (await AsyncStorage.getItem('userToken'));
+      const token = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
       return {
         'Content-Type': 'application/json',
         'Authorization': token ? `Bearer ${token}` : '',
@@ -220,7 +219,7 @@ class ServicesAPI {
       // Fallback 1: decode userId from JWT in storage
       if (!providerId) {
         try {
-          const token = (await AsyncStorage.getItem('token')) || (await AsyncStorage.getItem('userToken')) || (await AsyncStorage.getItem('authToken'));
+          const token = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
           if (token) {
             const parts = token.split('.');
             if (parts.length === 3) {

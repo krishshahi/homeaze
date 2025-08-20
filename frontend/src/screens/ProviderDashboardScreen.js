@@ -17,6 +17,7 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import CustomButton from '../components/CustomButton';
@@ -32,6 +33,9 @@ const { width } = Dimensions.get('window');
 const ProviderDashboardScreen = ({ navigation }) => {
   const dispatch = useAppDispatch();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  
+  console.log('🏠 ProviderDashboard - Safe area insets:', insets, 'Platform:', Platform.OS);
   
   const [dashboardData, setDashboardData] = useState({
     todayEarnings: 0,
@@ -310,7 +314,7 @@ const ProviderDashboardScreen = ({ navigation }) => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
       
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -514,7 +518,7 @@ const ProviderDashboardScreen = ({ navigation }) => {
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

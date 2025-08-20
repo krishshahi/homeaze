@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 
 const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:5000/api'  // Development server
+  ? 'http://192.168.1.129:3001/api'  // Development server
   : 'https://your-production-api-url.com/api'; // Production server
 
 class SecurityAPI {

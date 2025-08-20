@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 
 
@@ -11,8 +12,8 @@ import { Provider, useSelector, useDispatch } from 'react-redux';
 import MainNavigator from './src/navigation/MainNavigator';
 import ProviderNavigator from './src/navigation/ProviderNavigator';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
-import LoginScreen from './src/screens/LoginScreen';
-import SignUpScreen from './src/screens/SignUpScreen';
+import SimpleLoginScreen from './src/screens/SimpleLoginScreen';
+import SimpleSignupScreen from './src/screens/SimpleSignupScreen';
 import UserTypeSelectorScreen from './src/screens/UserTypeSelectorScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import { store } from './src/store';
@@ -113,8 +114,8 @@ function AppNavigator() {
       >
         {/* Always include all screens, but control initial route */}
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Signup" component={SignUpScreen} />
+        <Stack.Screen name="Login" component={SimpleLoginScreen} />
+        <Stack.Screen name="Signup" component={SimpleSignupScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="UserTypeSelector" component={UserTypeSelectorScreen} />
         <Stack.Screen name="Main" component={MainNavigator} />
@@ -127,9 +128,11 @@ function AppNavigator() {
 export default function App() {
   return (
     <Provider store={store}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <AppNavigator />
-      </GestureHandlerRootView>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AppNavigator />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
     </Provider>
   );
 }

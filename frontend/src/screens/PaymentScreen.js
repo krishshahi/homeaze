@@ -22,7 +22,10 @@ const PaymentScreen = ({ navigation, route }) => {
   const { user } = useAppSelector(state => state.auth);
   
   // Get booking details from route params if coming from booking flow
-  const { bookingId, amount, serviceName } = route.params || {};
+  const { bookingId, amount: rawAmount, serviceName } = route.params || {};
+  
+  // Ensure amount is a number for calculations
+  const amount = parseFloat(rawAmount) || 0;
   
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('card');
   const [loading, setLoading] = useState(false);
@@ -208,8 +211,9 @@ const PaymentScreen = ({ navigation, route }) => {
         }
       }
       
-      // Calculate final amount
-      const finalAmount = (amount + 3.99 + (amount * 0.08));
+      // Calculate final amount - ensure all values are numbers
+      const serviceAmount = parseFloat(amount) || 0;
+      const finalAmount = serviceAmount + 3.99 + (serviceAmount * 0.08);
       
       // Prepare payment data
       let paymentData = {
