@@ -1,4 +1,6 @@
 // QuoteCard Component - Display Quote Information with Actions
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
   View,
@@ -8,7 +10,7 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const QuoteCard = ({
@@ -164,7 +166,7 @@ const QuoteCard = ({
           {/* Service Details */}
           <View style={styles.detailsRow}>
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>📅 Date</Text>
+              <Text style={styles.detailLabel}><MaterialCommunityIcons name="calendar-outline" /> Date</Text>
               <Text style={styles.detailValue}>
                 {quote.timeline?.preferredStartDate ? 
                   formatDate(quote.timeline.preferredStartDate) : 
@@ -174,7 +176,7 @@ const QuoteCard = ({
             </View>
             
             <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>⏱️ Duration</Text>
+              <Text style={styles.detailLabel}><MaterialCommunityIcons name="clock-outline" /> Duration</Text>
               <Text style={styles.detailValue}>
                 {quote.timeline?.estimatedDuration || 'TBD'}
               </Text>
@@ -184,7 +186,7 @@ const QuoteCard = ({
           {/* Provider/Customer Info */}
           {userType === 'customer' && quote.provider && (
             <View style={styles.providerInfo}>
-              <Text style={styles.providerLabel}>👷 Provider</Text>
+              <Text style={styles.providerLabel}><MaterialCommunityIcons name="account-hard-hat" /> Provider</Text>
               <Text style={styles.providerName}>{quote.provider.businessName}</Text>
               <View style={styles.ratingContainer}>
                 <Text style={styles.rating}>⭐ {quote.provider.rating?.average || 'N/A'}</Text>
@@ -197,7 +199,7 @@ const QuoteCard = ({
 
           {userType === 'provider' && quote.customer && (
             <View style={styles.customerInfo}>
-              <Text style={styles.customerLabel}>👤 Customer</Text>
+              <Text style={styles.customerLabel}><MaterialCommunityIcons name="account-outline" /> Customer</Text>
               <Text style={styles.customerName}>{quote.customer.name}</Text>
               <Text style={styles.location}>📍 {quote.serviceLocation?.address}</Text>
             </View>
@@ -210,7 +212,7 @@ const QuoteCard = ({
                 styles.timeText,
                 { color: timeRemaining === 'Expired' ? COLORS.error : COLORS.warning }
               ]}>
-                ⏰ {timeRemaining}
+                <MaterialCommunityIcons name="timer-sand" /> {timeRemaining}
               </Text>
             </View>
           )}
@@ -290,7 +292,7 @@ const QuoteCard = ({
         {/* Quote Notes */}
         {quote.notes && quote.notes.length > 0 && (
           <View style={styles.notesContainer}>
-            <Text style={styles.notesLabel}>📝 Latest Note</Text>
+            <Text style={styles.notesLabel}><MaterialCommunityIcons name="note-text-outline" /> Latest Note</Text>
             <Text style={styles.notesText} numberOfLines={2}>
               {quote.notes[quote.notes.length - 1].content}
             </Text>
@@ -306,7 +308,7 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.md,
     marginVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.medium,
+    ...SHADOWS.light,
   },
   gradient: {
     borderRadius: BORDER_RADIUS.lg,
@@ -499,7 +501,7 @@ const styles = StyleSheet.create({
   notesText: {
     fontSize: FONTS.sm,
     color: COLORS.textPrimary,
-    lineHeight: FONTS.sm * 1.4,
+    lineHeight: FONTS.sm * FONTS.lineHeightNormal,
   },
 });
 

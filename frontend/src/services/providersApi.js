@@ -1,7 +1,7 @@
 // Providers API service
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 class ProvidersAPI {
   /**
@@ -10,7 +10,7 @@ class ProvidersAPI {
    */
   static async getAuthHeaders() {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = (await AsyncStorage.getItem('token')) || (await AsyncStorage.getItem('userToken'));
       return {
         'Content-Type': 'application/json',
         'Authorization': token ? `Bearer ${token}` : '',
@@ -181,7 +181,8 @@ class ProvidersAPI {
         }
       });
 
-      const url = `${API_BASE_URL}/providers/bookings${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      // Backend exposes unified /bookings; role in auth determines provider/customer scope
+      const url = `${API_BASE_URL}/bookings${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -313,20 +314,30 @@ class ProvidersAPI {
         }
       });
 
-      const url = `${API_BASE_URL}/providers/stats${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      // Use dashboard overview to avoid 404s; map into expected shape
+      const url = `${API_BASE_URL}/dashboard/overview${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
       const response = await fetch(url, {
         method: 'GET',
         headers,
       });
 
-      const data = await response.json();
+      const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch provider stats');
+        throw new Error(payload.message || 'Failed to fetch provider stats');
       }
 
-      return data;
+      const d = payload.data || {};
+      const mapped = {
+        todayEarnings: 0,
+        weeklyEarnings: 0,
+        monthlyEarnings: d.thisMonth?.revenue || 0,
+        averageRating: 0,
+        totalReviews: d.totalReviews || 0,
+      };
+
+      return mapped;
     } catch (error) {
       throw error;
     }

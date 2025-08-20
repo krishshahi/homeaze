@@ -1,5 +1,6 @@
 // Location Redux Slice - State Management for Geographic Services
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import * as locationApi from '../../services/locationApi';
 
 // Async thunks for API calls

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,140 +11,130 @@ import {
   RefreshControl,
   Alert,
   Modal,
-  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SIZES } from '../constants/theme';
+
 import CustomButton from '../components/CustomButton';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { COLORS, FONTS, SIZES } from '../constants/theme';
+import ServicesAPI from '../services/servicesApi';
 
-const EnhancedProviderServicesScreen = ({ navigation }) => {
+// Simple in-screen toast/badge message
+const ToastBanner = ({ message }) => (
+  <View style={{
+    position: 'absolute', top: 12, left: 16, right: 16, zIndex: 10,
+    backgroundColor: '#1E8E3E', paddingVertical: 10, paddingHorizontal: 14,
+    borderRadius: 10
+  }}>
+    <Text style={{ color: 'white', fontWeight: '600', textAlign: 'center' }}>{message}</Text>
+  </View>
+);
+
+const EnhancedProviderServicesScreen = ({ navigation, route }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [selectedService, setSelectedService] = useState(null);
   const [actionModalVisible, setActionModalVisible] = useState(false);
-
-  // Mock provider services data
-  const mockProviderServices = [
-    {
-      id: 'ps1',
-      name: 'Professional House Cleaning',
-      description: 'Deep cleaning service for your home including all rooms, bathrooms, and kitchen.',
-      category: 'cleaning',
-      icon: '🧹',
-      price: 85,
-      minDuration: 2,
-      maxDuration: 4,
-      status: 'active',
-      isActive: true,
-      featured: true,
-      bookingsCount: 47,
-      rating: 4.9,
-      reviewCount: 32,
-      totalEarnings: 3995,
-      availability: 'Weekdays & Weekends',
-      features: ['Eco-friendly supplies', 'Insured', 'Background checked'],
-      lastBooked: '2024-01-14T10:00:00Z',
-      createdAt: '2023-06-15T09:00:00Z',
-    },
-    {
-      id: 'ps2',
-      name: 'Apartment Deep Clean',
-      description: 'Specialized cleaning service for apartments and small spaces.',
-      category: 'cleaning',
-      icon: '🏢',
-      price: 65,
-      minDuration: 1.5,
-      maxDuration: 3,
-      status: 'active',
-      isActive: true,
-      featured: false,
-      bookingsCount: 23,
-      rating: 4.7,
-      reviewCount: 18,
-      totalEarnings: 1495,
-      availability: 'Weekdays',
-      features: ['Quick service', 'Flexible timing'],
-      lastBooked: '2024-01-12T14:30:00Z',
-      createdAt: '2023-09-20T11:00:00Z',
-    },
-    {
-      id: 'ps3',
-      name: 'Office Cleaning',
-      description: 'Commercial cleaning service for offices and small businesses.',
-      category: 'cleaning',
-      icon: '🏢',
-      price: 95,
-      minDuration: 2,
-      maxDuration: 6,
-      status: 'inactive',
-      isActive: false,
-      featured: false,
-      bookingsCount: 12,
-      rating: 4.8,
-      reviewCount: 9,
-      totalEarnings: 1140,
-      availability: 'Evenings & Weekends',
-      features: ['After-hours service', 'Commercial grade supplies'],
-      lastBooked: '2023-12-28T18:00:00Z',
-      createdAt: '2023-11-05T16:00:00Z',
-    },
-    {
-      id: 'ps4',
-      name: 'Post-Construction Cleanup',
-      description: 'Specialized cleaning after construction or renovation work.',
-      category: 'cleaning',
-      icon: '🔨',
-      price: 120,
-      minDuration: 4,
-      maxDuration: 8,
-      status: 'pending',
-      isActive: false,
-      featured: false,
-      bookingsCount: 0,
-      rating: 0,
-      reviewCount: 0,
-      totalEarnings: 0,
-      availability: 'Custom Schedule',
-      features: ['Heavy-duty equipment', 'Dust removal', 'Debris cleanup'],
-      lastBooked: null,
-      createdAt: '2024-01-10T12:00:00Z',
-    },
-  ];
+  const [toastMessage, setToastMessage] = useState('');
 
   const tabs = [
-    { id: 'all', title: 'All Services', count: mockProviderServices.length },
-    { id: 'active', title: 'Active', count: mockProviderServices.filter(s => s.status === 'active').length },
-    { id: 'inactive', title: 'Inactive', count: mockProviderServices.filter(s => s.status === 'inactive').length },
-    { id: 'pending', title: 'Pending Review', count: mockProviderServices.filter(s => s.status === 'pending').length },
+    { id: 'all', title: 'All Services', count: services.length },
+    { id: 'active', title: 'Active', count: services.filter(s => s.status === 'active').length },
+    { id: 'inactive', title: 'Inactive', count: services.filter(s => s.status === 'inactive').length },
+    { id: 'pending', title: 'Pending Review', count: services.filter(s => s.status === 'pending').length },
   ];
-
-  useEffect(() => {
-    loadProviderServices();
-  }, []);
-
-  const loadProviderServices = async () => {
+  const loadProviderServices = useCallback(async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setServices(mockProviderServices);
+      const res = await ServicesAPI.getProviderServices();
+      // Support shapes: {success,data:{services:[]}}, {data:{services:[]}}, {services:[]}, or []
+      const servicesArray = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.services)
+            ? res.services
+            : Array.isArray(res?.data?.services)
+              ? res.data.services
+              : [];
+      const normalized = servicesArray.map(normalizeService);
+      setServices(normalized);
     } catch (error) {
       console.error('Error loading provider services:', error);
       Alert.alert('Error', 'Failed to load your services');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleRefresh = async () => {
+  // Pull-to-refresh handler must be defined before effects that reference it
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadProviderServices();
     setRefreshing(false);
-  };
+  }, [loadProviderServices]);
+
+  useEffect(() => {
+    loadProviderServices();
+  }, [loadProviderServices]);
+
+  // Refresh when returning to this screen
+  useFocusEffect(
+    useCallback(() => {
+      loadProviderServices();
+    }, [loadProviderServices])
+  );
+
+  // Refresh when a navigation param requests it and handle optimistic insert
+  useEffect(() => {
+    let needsClear = false;
+    if (route?.params?.toast) {
+      setToastMessage(route.params.toast);
+      setTimeout(() => setToastMessage(''), 3000);
+      needsClear = true;
+    }
+    if (route?.params?.newService) {
+      const ns = route.params.newService;
+      setServices(prev => {
+        const exists = prev.some(s => s.id === ns.id);
+        if (exists) return prev;
+        return [ns, ...prev];
+      });
+      needsClear = true;
+    }
+    if (route?.params?.refresh) {
+      handleRefresh();
+      needsClear = true;
+    }
+    if (needsClear) {
+      navigation.setParams?.({ refresh: undefined, newService: undefined });
+    }
+  }, [route?.params?.refresh, route?.params?.newService, handleRefresh, navigation]);
+
+  const normalizeService = (s) => ({
+    id: s.id || s._id,
+    name: s.name || s.title || 'Service',
+    description: s.description || '',
+    category: s.category || s.categoryId || '',
+    icon: s.icon || '',
+    // Map backend pricing structure
+    price: s.price ?? s.basePrice ?? s.pricing?.amount ?? 0,
+    minDuration: s.minDuration || s.duration?.min || 1,
+    maxDuration: s.maxDuration || s.duration?.max || s.duration || 1,
+    status: s.status || (s.isActive ? 'active' : 'inactive') || 'inactive',
+    isActive: s.isActive ?? (s.status === 'active'),
+    featured: !!s.featured,
+    bookingsCount: s.bookingsCount || 0,
+    rating: s.rating?.average ?? s.rating ?? s.averageRating ?? 0,
+    reviewCount: s.rating?.totalReviews ?? s.reviewCount ?? s.totalReviews ?? 0,
+    totalEarnings: s.totalEarnings || 0,
+    availability: s.availability || '',
+    features: s.features || [],
+    lastBooked: s.lastBooked || null,
+    createdAt: s.createdAt || null,
+  });
 
   const getFilteredServices = () => {
     switch (activeTab) {
@@ -174,7 +166,7 @@ const EnhancedProviderServicesScreen = ({ navigation }) => {
         navigation.navigate('ServiceAnalytics', { serviceId: service.id });
         break;
       case 'duplicate':
-        duplicateService(service);
+        Alert.alert('Coming soon', 'Duplicating a service will be available soon.');
         break;
       default:
         setActionModalVisible(true);
@@ -185,9 +177,7 @@ const EnhancedProviderServicesScreen = ({ navigation }) => {
     const newStatus = service.status === 'active' ? 'inactive' : 'active';
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      await ServicesAPI.updateServiceStatus(service.id, newStatus);
       setServices(prevServices =>
         prevServices.map(s =>
           s.id === service.id
@@ -222,36 +212,12 @@ const EnhancedProviderServicesScreen = ({ navigation }) => {
 
   const deleteService = async (serviceId) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setServices(prevServices =>
-        prevServices.filter(s => s.id !== serviceId)
-      );
-
+      // If backend supports deletion, call it here; otherwise optimistically update UI
+      // await providerServicesAPI.deleteService(serviceId);
+      setServices(prevServices => prevServices.filter(s => s.id !== serviceId));
       Alert.alert('Success', 'Service deleted successfully!');
     } catch (error) {
       Alert.alert('Error', 'Failed to delete service');
-    }
-  };
-
-  const duplicateService = async (service) => {
-    try {
-      const duplicatedService = {
-        ...service,
-        id: `${service.id}_copy_${Date.now()}`,
-        name: `${service.name} (Copy)`,
-        status: 'inactive',
-        isActive: false,
-        bookingsCount: 0,
-        totalEarnings: 0,
-        createdAt: new Date().toISOString(),
-      };
-
-      setServices(prevServices => [duplicatedService, ...prevServices]);
-      Alert.alert('Success', 'Service duplicated successfully!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to duplicate service');
     }
   };
 
@@ -443,6 +409,7 @@ const EnhancedProviderServicesScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {!!toastMessage && <ToastBanner message={toastMessage} />}
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>

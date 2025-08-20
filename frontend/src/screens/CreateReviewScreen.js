@@ -10,7 +10,11 @@ import {
   Platform,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
+
+import CustomButton from '../components/CustomButton';
+import RatingStars from '../components/RatingStars';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { selectAuthToken } from '../store/slices/authSlice';
 import {
   createReview,
   selectReviewLoading,
@@ -19,9 +23,6 @@ import {
   clearReviewError,
   clearSuccessMessage,
 } from '../store/slices/reviewSlice';
-import { selectAuthToken } from '../store/slices/authSlice';
-import CustomButton from '../components/CustomButton';
-import RatingStars from '../components/RatingStars';
 
 const CreateReviewScreen = ({ route, navigation }) => {
   const dispatch = useDispatch();

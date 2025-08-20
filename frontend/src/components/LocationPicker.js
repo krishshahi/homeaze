@@ -1,4 +1,7 @@
 // LocationPicker Component - Geographic Location Selection
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -11,8 +14,7 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Location from 'expo-location';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const LocationPicker = ({
@@ -215,7 +217,7 @@ const LocationPicker = ({
           <Text style={styles.resultTitle} numberOfLines={1}>
             {item.name || item.formattedAddress || item.address}
           </Text>
-          <Text style={styles.resultType}>{getLocationTypeIcon(item.type)}</Text>
+          <MaterialCommunityIcons name={getLocationTypeIcon(item.type)} size={16} style={styles.resultType} />
         </View>
         
         {item.formattedAddress && item.formattedAddress !== item.name && (
@@ -225,9 +227,7 @@ const LocationPicker = ({
         )}
         
         {item.distance && (
-          <Text style={styles.resultDistance}>
-            📍 {item.distance.toFixed(1)} km away
-          </Text>
+          <Text style={styles.resultDistance}><MaterialCommunityIcons name="map-marker-outline" /> {item.distance.toFixed(1)} km away</Text>
         )}
       </View>
     </TouchableOpacity>
@@ -236,15 +236,15 @@ const LocationPicker = ({
   // Get location type icon
   const getLocationTypeIcon = (type) => {
     const icons = {
-      current: '📍',
-      city: '🏙️',
-      neighborhood: '🏘️',
-      address: '🏠',
-      business: '🏢',
-      landmark: '🗺️',
-      manual: '✏️'
+      current: 'map-marker-outline',
+      city: 'city-variant-outline',
+      neighborhood: 'home-group',
+      address: 'home-outline',
+      business: 'office-building-outline',
+      landmark: 'map-outline',
+      manual: 'pencil-outline'
     };
-    return icons[type] || '📍';
+    return icons[type] || 'map-marker-outline';
   };
 
   // Clear selection
@@ -267,7 +267,7 @@ const LocationPicker = ({
       ]}>
         <View style={styles.inputWrapper}>
           {/* Location Icon */}
-          <Text style={styles.locationIcon}>📍</Text>
+          <MaterialCommunityIcons name="map-marker-outline" size={18} style={styles.locationIcon} />
           
           {/* Text Input */}
           <TextInput
@@ -302,7 +302,7 @@ const LocationPicker = ({
               style={styles.clearButton}
               onPress={handleClear}
             >
-              <Text style={styles.clearIcon}>✕</Text>
+              <MaterialCommunityIcons name="close" size={16} color={COLORS.textMuted} />
             </TouchableOpacity>
           )}
         </View>
@@ -320,7 +320,7 @@ const LocationPicker = ({
                 {loadingCurrentLocation ? (
                   <ActivityIndicator size="small" color={COLORS.white} />
                 ) : (
-                  <Text style={styles.actionButtonText}>📍 Current</Text>
+                  <Text style={styles.actionButtonText}><MaterialCommunityIcons name="crosshairs-gps" /> Current</Text>
                 )}
               </TouchableOpacity>
             )}
@@ -334,7 +334,7 @@ const LocationPicker = ({
                   console.log('Open map picker');
                 }}
               >
-                <Text style={styles.actionButtonText}>🗺️ Map</Text>
+                <Text style={styles.actionButtonText}><MaterialCommunityIcons name="map-search-outline" /> Map</Text>
               </TouchableOpacity>
             )}
           </View>

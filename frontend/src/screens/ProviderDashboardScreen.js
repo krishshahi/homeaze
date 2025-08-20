@@ -1,3 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -14,16 +18,14 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+
+import CustomButton from '../components/CustomButton';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS } from '../constants/theme';
+import BookingsAPI from '../services/bookingsApi';
+import ProvidersAPI from '../services/providersApi';
 import { useAppDispatch, useAuth } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
-import ProvidersAPI from '../services/providersApi';
-import BookingsAPI from '../services/bookingsApi';
-import CustomButton from '../components/CustomButton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+
 
 const { width } = Dimensions.get('window');
 
@@ -720,21 +722,6 @@ const styles = StyleSheet.create({
     ...SHADOWS.subtle,
   },
   
-  statNumber: {
-    fontSize: FONTS.h3,
-    fontWeight: FONTS.weightExtraBold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.xs,
-    textAlign: 'center',
-  },
-  
-  statLabel: {
-    fontSize: FONTS.caption,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    fontWeight: FONTS.weightMedium,
-    lineHeight: FONTS.caption * FONTS.lineHeightNormal,
-  },
   
   // Enhanced Category Grid
   categoryGrid: {
@@ -800,14 +787,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.md,
     gap: SPACING.sm,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    alignItems: 'center',
-    ...SHADOWS.light,
-  },
+  /* statCard duplicate removed to avoid duplicate key warning; using earlier definition */
   pendingCard: {
     borderLeftWidth: 4,
     borderLeftColor: COLORS.warning,
@@ -881,11 +861,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.md,
   },
-  seeAllText: {
-    fontSize: FONTS.sm,
-    color: COLORS.primary,
-    fontWeight: FONTS.weightMedium,
-  },
+  /* seeAllText duplicate removed to avoid duplicate key warning; using earlier definition */
   bookingCard: {
     backgroundColor: COLORS.backgroundSecondary,
     padding: SPACING.md,

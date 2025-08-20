@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -11,9 +12,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
-import { useAppDispatch, useAuth } from '../store/hooks';
 import BookingsAPI from '../services/bookingsApi';
+import { useAppDispatch, useAuth } from '../store/hooks';
 
 const ProviderBookingsScreen = ({ navigation }) => {
   const dispatch = useAppDispatch();
@@ -41,8 +43,8 @@ const ProviderBookingsScreen = ({ navigation }) => {
       
     } catch (error) {
       console.error('❌ Error loading provider bookings:', error);
-      // Use mock data as fallback
-      setBookings(mockProviderBookings);
+      // No mock fallback; keep empty state for dynamic-only app
+      setBookings([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -101,14 +103,14 @@ const ProviderBookingsScreen = ({ navigation }) => {
     }
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusIconName = (status) => {
     switch (status) {
-      case 'pending': return '⏳';
-      case 'confirmed': return '✅';
-      case 'in-progress': return '🔄';
-      case 'completed': return '🎉';
-      case 'cancelled': return '❌';
-      default: return '📋';
+      case 'pending': return 'timer-sand';
+      case 'confirmed': return 'check-circle-outline';
+      case 'in-progress': return 'progress-clock';
+      case 'completed': return 'check-decagram';
+      case 'cancelled': return 'close-circle-outline';
+      default: return 'clipboard-text-outline';
     }
   };
 
@@ -166,15 +168,15 @@ const ProviderBookingsScreen = ({ navigation }) => {
     >
       <View style={styles.bookingHeader}>
         <View style={styles.bookingService}>
-          <Text style={styles.bookingServiceIcon}>{item.serviceIcon || '🏠'}</Text>
+          <MaterialCommunityIcons name={item.serviceIcon || 'home-outline'} size={40} style={{ marginRight: SPACING.md }} />
           <View style={styles.bookingServiceInfo}>
             <Text style={styles.bookingServiceTitle}>{item.serviceTitle}</Text>
-            <Text style={styles.customerName}>👤 {item.customerName || 'Customer'}</Text>
+            <Text style={styles.customerName}><MaterialCommunityIcons name="account-outline" /> {item.customerName || 'Customer'}</Text>
           </View>
         </View>
         
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) + '20' }]}>
-          <Text style={styles.statusIcon}>{getStatusIcon(item.status)}</Text>
+          <MaterialCommunityIcons name={getStatusIconName(item.status)} size={16} style={{ marginRight: SPACING.xs }} />
           <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
             {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
           </Text>
@@ -183,21 +185,21 @@ const ProviderBookingsScreen = ({ navigation }) => {
 
       <View style={styles.bookingDetails}>
         <View style={styles.bookingDetailRow}>
-          <Text style={styles.bookingDetailIcon}>📅</Text>
+          <MaterialCommunityIcons name="calendar-outline" size={16} style={styles.bookingDetailIcon} />
           <Text style={styles.bookingDetailText}>
             {new Date(item.scheduledDate).toLocaleDateString()} at {item.scheduledTime || 'TBD'}
           </Text>
         </View>
         
         <View style={styles.bookingDetailRow}>
-          <Text style={styles.bookingDetailIcon}>📍</Text>
+          <MaterialCommunityIcons name="map-marker-outline" size={16} style={styles.bookingDetailIcon} />
           <Text style={styles.bookingDetailText} numberOfLines={1}>
             {item.location || item.address}
           </Text>
         </View>
         
         <View style={styles.bookingDetailRow}>
-          <Text style={styles.bookingDetailIcon}>💰</Text>
+          <MaterialCommunityIcons name="cash" size={16} style={styles.bookingDetailIcon} />
           <Text style={styles.bookingEarning}>${item.totalCost}</Text>
         </View>
       </View>
@@ -212,7 +214,7 @@ const ProviderBookingsScreen = ({ navigation }) => {
 
   const EmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>📋</Text>
+      <MaterialCommunityIcons name="clipboard-text-outline" size={64} style={styles.emptyStateIcon} />
       <Text style={styles.emptyStateTitle}>No bookings found</Text>
       <Text style={styles.emptyStateSubtitle}>
         {selectedTab === 'all' 
@@ -230,7 +232,7 @@ const ProviderBookingsScreen = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Bookings</Text>
         <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
-          <Text style={styles.refreshIcon}>🔄</Text>
+          <MaterialCommunityIcons name="refresh" size={FONTS.lg} />
         </TouchableOpacity>
       </View>
 
@@ -293,7 +295,7 @@ const ProviderBookingsScreen = ({ navigation }) => {
   );
 };
 
-// Mock data for fallback
+// Mock data removed
 const mockProviderBookings = [
   {
     id: '1',

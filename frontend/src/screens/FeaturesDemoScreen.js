@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,9 +11,9 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import { useAuth, useAppDispatch } from '../store/hooks';
-import { Ionicons } from '@expo/vector-icons';
 
 const FeaturesDemoScreen = ({ navigation }) => {
   const auth = useAuth();

@@ -1,34 +1,39 @@
-import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { COLORS } from '../constants/theme';
+import React, { useMemo } from 'react';
+import { useSelector } from 'react-redux';
+
 import EnhancedTabBar from '../components/EnhancedTabBar';
+import { COLORS } from '../constants/theme';
 
 // Import Enhanced Home Screen
+import AdvancedSearchScreen from '../screens/AdvancedSearchScreen';
+import BookingConfirmationScreen from '../screens/BookingConfirmationScreen';
+import BookingFormScreen from '../screens/BookingFormScreen';
+import ChatScreen from '../screens/ChatScreen';
+import CustomerDashboardScreen from '../screens/CustomerDashboardScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import EnhancedBookingsScreen from '../screens/EnhancedBookingsScreen';
 import EnhancedHomeScreen from '../screens/EnhancedHomeScreen';
 
 // Import Enhanced Screens
-import EnhancedServicesScreen from '../screens/EnhancedServicesScreen';
-import EnhancedBookingsScreen from '../screens/EnhancedBookingsScreen';
 import EnhancedProfileScreen from '../screens/EnhancedProfileScreen';
-import EditProfileScreen from '../screens/EditProfileScreen';
+import EnhancedReviewsScreen from '../screens/EnhancedReviewsScreen';
+import EnhancedServicesScreen from '../screens/EnhancedServicesScreen';
+import FeaturesDemoScreen from '../screens/FeaturesDemoScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
-import ServiceDetailsScreen from '../screens/ServiceDetailsScreen';
-import BookingFormScreen from '../screens/BookingFormScreen';
+import PaymentScreen from '../screens/PaymentScreen';
 import ProviderProfileScreen from '../screens/ProviderProfileScreen';
 import ProvidersScreen from '../screens/ProvidersScreen';
 import SecuritySettingsScreen from '../screens/SecuritySettingsScreen';
-import FeaturesDemoScreen from '../screens/FeaturesDemoScreen';
-import AdvancedSearchScreen from '../screens/AdvancedSearchScreen';
-import PaymentScreen from '../screens/PaymentScreen';
-import NotificationsScreen from '../screens/NotificationsScreen';
-import CustomerDashboardScreen from '../screens/CustomerDashboardScreen';
-import ChatScreen from '../screens/ChatScreen';
-import EnhancedReviewsScreen from '../screens/EnhancedReviewsScreen';
-import BookingConfirmationScreen from '../screens/BookingConfirmationScreen';
+import ServiceDetailsScreen from '../screens/ServiceDetailsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
+// Extract tabBar component to avoid nested definition in render
+const MainTabBar = (props) => <EnhancedTabBar {...props} />;
 
 // Home Stack
 const HomeStack = () => {
@@ -98,17 +103,49 @@ const ProfileStack = () => {
 };
 
 const MainNavigator = () => {
+  // Derive badge counts from store for customer app
+  const bookings = useSelector(state => state.booking?.bookings || []);
+  const notifications = useSelector(state => state.app?.notifications || []);
+
+  const upcomingOrPendingBookings = useMemo(() => {
+    try {
+      return bookings.filter(b => b && (b.status === 'pending' || b.status === 'confirmed' || b.status === 'in-progress')).length;
+    } catch {
+      return 0;
+    }
+  }, [bookings]);
+
+  const unreadNotificationsCount = useMemo(() => {
+    try {
+      return notifications.filter(n => n && n.read === false).length;
+    } catch {
+      return 0;
+    }
+  }, [notifications]);
+
   return (
     <Tab.Navigator
-      tabBar={(props) => <EnhancedTabBar {...props} />}
+      tabBar={MainTabBar}
       screenOptions={{
         headerShown: false,
       }}
     >
       <Tab.Screen name="Home" component={HomeStack} />
       <Tab.Screen name="Services" component={ServicesStack} />
-      <Tab.Screen name="Bookings" component={BookingsStack} />
-      <Tab.Screen name="Profile" component={ProfileStack} />
+      <Tab.Screen
+        name="Bookings"
+        component={BookingsStack}
+        options={{
+          tabBarBadgeCount: upcomingOrPendingBookings,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileStack}
+        options={{
+          tabBarBadgeCount: unreadNotificationsCount,
+        }}
+      />
     </Tab.Navigator>
   );
 };

@@ -1,4 +1,5 @@
 // ChatInterface Component - Real-time Messaging Interface
+import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -14,8 +15,9 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as ImagePicker from 'expo-image-picker';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
+
 import MessageBubble from './MessageBubble';
 
 const ChatInterface = ({

@@ -9,13 +9,14 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
-import { useAppDispatch, useServices, useAuth } from '../store/hooks';
-import { createNewBooking } from '../store/slices/bookingSlice';
 import BookingsAPI from '../services/bookingsApi';
 import ServicesAPI from '../services/servicesApi';
+import { useAppDispatch, useServices, useAuth } from '../store/hooks';
+import { createNewBooking } from '../store/slices/bookingSlice';
 
 const BookingFormScreen = ({ navigation, route }) => {
   const { serviceId } = route.params;

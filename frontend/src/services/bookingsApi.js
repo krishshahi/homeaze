@@ -2,8 +2,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 
-const API_BASE_URL = 'http://localhost:5000/api';
-const WEBSOCKET_URL = 'http://localhost:5000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const WEBSOCKET_URL = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace(/\/api$/, '');
 
 class BookingsAPI {
   static socket = null;
@@ -14,7 +14,8 @@ class BookingsAPI {
    */
   static async getAuthHeaders() {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      // Support both keys to avoid auth mismatches
+      const token = (await AsyncStorage.getItem('token')) || (await AsyncStorage.getItem('userToken'));
       return {
         'Content-Type': 'application/json',
         'Authorization': token ? `Bearer ${token}` : '',
@@ -462,7 +463,8 @@ class BookingsAPI {
         }
       });
 
-      const url = `${API_BASE_URL}/bookings/provider${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      // Backend exposes GET /api/bookings for both roles (customer/provider)
+      const url = `${API_BASE_URL}/bookings${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -497,7 +499,7 @@ class BookingsAPI {
         }
       });
 
-      const url = `${API_BASE_URL}/bookings/customer${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      const url = `${API_BASE_URL}/bookings${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       
       const response = await fetch(url, {
         method: 'GET',

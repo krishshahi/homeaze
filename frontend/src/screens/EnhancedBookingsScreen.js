@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -13,14 +15,13 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS } from '../constants/theme';
+import * as bookingsApi from '../services/bookingsApi';
 import { useAppDispatch, useBookings, useAuth } from '../store/hooks';
 import { fetchUserBookings, updateBooking, cancelBooking } from '../store/slices/bookingSlice';
-import * as bookingsApi from '../services/bookingsApi';
 
 const EnhancedBookingsScreen = ({ navigation }) => {
   const dispatch = useAppDispatch();

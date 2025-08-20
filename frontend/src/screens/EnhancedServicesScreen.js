@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -14,15 +16,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import ServiceCard from '../components/ServiceCard';
-import CustomInput from '../components/CustomInput';
+
 import CustomButton from '../components/CustomButton';
+import CustomInput from '../components/CustomInput';
+import ServiceCard from '../components/ServiceCard';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS } from '../constants/theme';
+import * as servicesApi from '../services/servicesApi';
 import { useAppDispatch, useServices, useAuth } from '../store/hooks';
 import { fetchServices, fetchCategories, updateFilters, searchServices } from '../store/slices/servicesSlice';
-import * as servicesApi from '../services/servicesApi';
 
 const { width } = Dimensions.get('window');
 
@@ -132,8 +133,13 @@ const EnhancedServicesScreen = ({ navigation }) => {
         selectedCategory === 'all' || 
         service.category?.toLowerCase() === selectedCategory;
       
-      // Price filter
-      const price = service.startingPrice || service.price || 0;
+      // Price filter (normalize strings like "$40/hr" or "Get Quote")
+      const priceRaw = (service.startingPrice !== undefined && service.startingPrice !== null)
+        ? service.startingPrice
+        : (service.price !== undefined ? service.price : 0);
+      const price = typeof priceRaw === 'string'
+        ? (parseFloat(priceRaw.replace(/[^0-9.]/g, '')) || 0)
+        : Number(priceRaw || 0);
       const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
       
       // Featured filter

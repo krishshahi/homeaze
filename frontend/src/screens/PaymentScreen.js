@@ -12,6 +12,7 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 
@@ -253,8 +254,8 @@ const PaymentScreen = ({ navigation, route }) => {
         id: Date.now().toString(),
         type: getCardType(cardForm.cardNumber),
         last4: cardForm.cardNumber.replace(/\s/g, '').slice(-4),
-        expiryMonth: parseInt(cardForm.expiryMonth),
-        expiryYear: parseInt(cardForm.expiryYear),
+        expiryMonth: parseInt(cardForm.expiryMonth, 10),
+        expiryYear: parseInt(cardForm.expiryYear, 10),
         cardholderName: cardForm.cardholderName,
         isDefault: savedCards.length === 0,
       };

@@ -1,4 +1,5 @@
 // MessageBubble Component - Individual Message Display
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
   View,
@@ -10,7 +11,7 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const { width: screenWidth } = Dimensions.get('window');

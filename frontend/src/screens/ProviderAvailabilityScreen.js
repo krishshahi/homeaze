@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -11,7 +12,9 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
+import ProvidersAPI from '../services/providersApi';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 
 const ProviderAvailabilityScreen = ({ navigation }) => {
@@ -42,44 +45,43 @@ const ProviderAvailabilityScreen = ({ navigation }) => {
     loadAvailability();
     loadWeeklySchedule();
   }, []);
-
   const loadAvailability = async () => {
     try {
       setLoading(true);
-      
-      // Mock availability data
-      const mockAvailability = {
-        '2024-01-15': {
-          available: true,
-          slots: ['9:00 AM', '10:00 AM', '2:00 PM', '3:00 PM'],
-          bookedSlots: ['11:00 AM', '1:00 PM'],
-        },
-        '2024-01-16': {
-          available: true,
-          slots: ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM'],
-          bookedSlots: ['2:00 PM'],
-        },
-        '2024-01-17': {
-          available: false,
-          slots: [],
-          bookedSlots: [],
-          reason: 'Personal day off',
-        },
-      };
-
-      setAvailability(mockAvailability);
-      setLoading(false);
-      
+      const todayStr = new Date().toISOString().split('T')[0];
+      const res = await ProvidersAPI.getProviderAvailability(null, todayStr).catch(() => null);
+      // Normalize format: { [date]: { available, slots, bookedSlots, reason } }
+      let normalized = {};
+      if (Array.isArray(res)) {
+        normalized[todayStr] = { available: res.length > 0, slots: res, bookedSlots: [] };
+      } else if (res?.availability) {
+        normalized = res.availability;
+      } else if (Array.isArray(res?.slots)) {
+        normalized[todayStr] = { available: res.slots.length > 0, slots: res.slots, bookedSlots: res.bookedSlots || [] };
+      } else if (res?.data?.availability) {
+        normalized = res.data.availability;
+      }
+      setAvailability(normalized || {});
     } catch (error) {
       console.error('❌ Error loading availability:', error);
+    } finally {
       setLoading(false);
     }
   };
-
   const loadWeeklySchedule = async () => {
     try {
-      // Mock weekly schedule
-      const mockSchedule = {
+      // Try to pull weekly schedule from provider availability endpoint without a date
+      const res = await ProvidersAPI.getProviderAvailability(null, null).catch(() => null);
+      let schedule = {};
+      if (res?.weeklySchedule) {
+        schedule = res.weeklySchedule;
+      } else if (res?.data?.weeklySchedule) {
+        schedule = res.data.weeklySchedule;
+      } else if (res?.schedule) {
+        schedule = res.schedule;
+      }
+      // Fallback default if API returns nothing
+      const fallback = {
         monday: { enabled: true, startTime: '8:00 AM', endTime: '6:00 PM', breakStart: '12:00 PM', breakEnd: '1:00 PM' },
         tuesday: { enabled: true, startTime: '8:00 AM', endTime: '6:00 PM', breakStart: '12:00 PM', breakEnd: '1:00 PM' },
         wednesday: { enabled: true, startTime: '8:00 AM', endTime: '6:00 PM', breakStart: '12:00 PM', breakEnd: '1:00 PM' },
@@ -88,8 +90,7 @@ const ProviderAvailabilityScreen = ({ navigation }) => {
         saturday: { enabled: true, startTime: '9:00 AM', endTime: '4:00 PM', breakStart: null, breakEnd: null },
         sunday: { enabled: false, startTime: null, endTime: null, breakStart: null, breakEnd: null },
       };
-
-      setWeeklySchedule(mockSchedule);
+      setWeeklySchedule(Object.keys(schedule).length ? schedule : fallback);
       
     } catch (error) {
       console.error('❌ Error loading weekly schedule:', error);
@@ -150,11 +151,13 @@ const ProviderAvailabilityScreen = ({ navigation }) => {
       }
     }));
   };
-
   const saveAvailability = async () => {
     try {
-      // In real app, would save to API
-      console.log('💾 Saving availability:', { weeklySchedule, availability });
+      const payload = {
+        weeklySchedule,
+        availability, // date-specific overrides
+      };
+      await ProvidersAPI.updateAvailability(payload);
       Alert.alert('Success', 'Your availability has been updated!');
     } catch (error) {
       console.error('❌ Error saving availability:', error);
@@ -213,7 +216,7 @@ const ProviderAvailabilityScreen = ({ navigation }) => {
 
   const renderWeeklySchedule = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>📅 Weekly Schedule</Text>
+      <Text style={styles.sectionTitle}><MaterialCommunityIcons name="calendar-week-outline" /> Weekly Schedule</Text>
       
       {daysOfWeek.map((day) => {
         const schedule = weeklySchedule[day.key];
@@ -261,13 +264,7 @@ const ProviderAvailabilityScreen = ({ navigation }) => {
 
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>
-          🕐 {selectedDate.toLocaleDateString('en-US', { 
-            weekday: 'long', 
-            month: 'long', 
-            day: 'numeric' 
-          })}
-        </Text>
+        <Text style={styles.sectionTitle}><MaterialCommunityIcons name="clock-outline" /> {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</Text>
         
         <View style={styles.availabilityToggle}>
           <Text style={styles.availabilityLabel}>Available for bookings</Text>
@@ -337,7 +334,7 @@ const ProviderAvailabilityScreen = ({ navigation }) => {
 
   const renderQuickActions = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>⚡ Quick Actions</Text>
+      <Text style={styles.sectionTitle}><MaterialCommunityIcons name="flash-outline" /> Quick Actions</Text>
       
       <View style={styles.actionsGrid}>
         <TouchableOpacity 
@@ -359,7 +356,7 @@ const ProviderAvailabilityScreen = ({ navigation }) => {
             setAvailability(prev => ({ ...prev, ...updates }));
           }}
         >
-          <Text style={styles.actionButtonText}>📅 Set Next Week Available</Text>
+          <Text style={styles.actionButtonText}><MaterialCommunityIcons name="calendar-week" /> Set Next Week Available</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -372,7 +369,7 @@ const ProviderAvailabilityScreen = ({ navigation }) => {
             );
           }}
         >
-          <Text style={styles.actionButtonText}>🏖️ Block Time Off</Text>
+          <Text style={styles.actionButtonText}><MaterialCommunityIcons name="beach" /> Block Time Off</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 

@@ -1,5 +1,6 @@
 // Quote Redux Slice - State Management for Quote System
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import * as quotesApi from '../../services/quotesApi';
 
 // Async thunks for API calls

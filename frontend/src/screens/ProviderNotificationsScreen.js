@@ -1,4 +1,5 @@
 import React from 'react';
+
 import NotificationsScreen from './NotificationsScreen';
 
 // Provider notifications screen extends the main notifications screen

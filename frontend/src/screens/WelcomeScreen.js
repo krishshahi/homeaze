@@ -1,6 +1,7 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions, StatusBar } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import CustomButton from '../components/CustomButton';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 

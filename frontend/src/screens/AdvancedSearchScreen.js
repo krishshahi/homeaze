@@ -12,9 +12,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
-import { useAppDispatch } from '../store/hooks';
 import ServicesAPI from '../services/servicesApi';
+import { useAppDispatch } from '../store/hooks';
 
 const AdvancedSearchScreen = ({ navigation }) => {
   const dispatch = useAppDispatch();
@@ -476,7 +477,7 @@ const AdvancedSearchScreen = ({ navigation }) => {
                   onChangeText={(value) => 
                     setFilters(prev => ({
                       ...prev,
-                      priceRange: { ...prev.priceRange, min: parseInt(value) || 0 }
+                      priceRange: { ...prev.priceRange, min: parseInt(value, 10) || 0 }
                     }))
                   }
                   keyboardType="numeric"
@@ -492,7 +493,7 @@ const AdvancedSearchScreen = ({ navigation }) => {
                   onChangeText={(value) => 
                     setFilters(prev => ({
                       ...prev,
-                      priceRange: { ...prev.priceRange, max: parseInt(value) || 200 }
+                      priceRange: { ...prev.priceRange, max: parseInt(value, 10) || 200 }
                     }))
                   }
                   keyboardType="numeric"

@@ -9,7 +9,10 @@ import {
   Alert,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
+
+import PaymentCard from '../components/PaymentCard';
 import { COLORS, FONTS, SPACING, LAYOUT } from '../constants/theme';
+import { selectAuthToken } from '../store/slices/authSlice';
 import {
   getPaymentHistory,
   selectPaymentHistory,
@@ -17,8 +20,6 @@ import {
   selectPaymentError,
   clearPaymentError,
 } from '../store/slices/paymentSlice';
-import { selectAuthToken } from '../store/slices/authSlice';
-import PaymentCard from '../components/PaymentCard';
 
 const PaymentHistoryScreen = () => {
   const dispatch = useDispatch();

@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
   View,
@@ -7,8 +9,9 @@ import {
   Dimensions,
   Animated,
   Image,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
@@ -37,6 +40,7 @@ const ServiceCard = ({
   isUnavailable = false,
   showActions = true,
   animated = true,
+  isLoading = false,
 }) => {
   const [scaleAnim] = useState(new Animated.Value(1));
   const [fadeAnim] = useState(new Animated.Value(1));
@@ -83,6 +87,22 @@ const ServiceCard = ({
     }
   };
 
+  const formatAvailability = (a) => {
+    try {
+      if (!a) return null;
+      if (typeof a === 'string') return a;
+      const days = Array.isArray(a.workingDays) ? a.workingDays.join(', ') : undefined;
+      const hours = a.workingHours ? `${a.workingHours.start || ''}-${a.workingHours.end || ''}` : undefined;
+      const flags = a.emergencyAvailable ? 'Emergency' : undefined;
+      return [days, hours, flags].filter(Boolean).join(' • ');
+    } catch {
+      return null;
+    }
+  };
+
+  const availabilityDisplay = formatAvailability(availability);
+  const providerDisplay = provider ? (typeof provider === 'string' ? provider : provider.name || provider.businessName || '') : null;
+
   const renderRatingStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
@@ -118,6 +138,14 @@ const ServiceCard = ({
     isUnavailable && styles.unavailableContainer,
     style,
   ];
+
+  if (isLoading) {
+    return (
+      <View style={[containerStyle, styles.loadingContainer]}>
+        <ActivityIndicator size="small" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
     <Animated.View
@@ -171,9 +199,7 @@ const ServiceCard = ({
               onPress={onFavoritePress}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={[styles.actionIcon, isFavorite && styles.favoriteIcon]}>
-                {isFavorite ? '❤️' : '🤍'}
-              </Text>
+              <MaterialCommunityIcons name={isFavorite ? 'heart' : 'heart-outline'} size={16} color={isFavorite ? COLORS.error : COLORS.textPrimary} />
             </TouchableOpacity>
             {onSharePress && (
               <TouchableOpacity
@@ -181,7 +207,7 @@ const ServiceCard = ({
                 onPress={onSharePress}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={styles.actionIcon}>📤</Text>
+                <MaterialCommunityIcons name="share-variant" size={16} color={COLORS.textPrimary} />
               </TouchableOpacity>
             )}
           </View>
@@ -207,9 +233,9 @@ const ServiceCard = ({
             {title}
           </Text>
 
-          {provider && (
+          {providerDisplay && (
             <Text style={[styles.provider, featured && styles.featuredProvider]} numberOfLines={1}>
-              by {provider.name}
+              by {providerDisplay}
             </Text>
           )}
 
@@ -252,12 +278,12 @@ const ServiceCard = ({
               <View style={styles.metaContainer}>
                 {duration && (
                   <Text style={[styles.metaText, featured && styles.featuredMetaText]}>
-                    ⏱️ {duration}
+                    <MaterialCommunityIcons name="clock-outline" /> {duration}
                   </Text>
                 )}
-                {availability && (
+                {availabilityDisplay && (
                   <Text style={[styles.metaText, featured && styles.featuredMetaText]}>
-                    📅 {availability}
+                    <MaterialCommunityIcons name="calendar-outline" /> {availabilityDisplay}
                   </Text>
                 )}
               </View>
@@ -317,7 +343,7 @@ export const ServiceCardHorizontal = ({
         
         <View style={styles.horizontalBottomContainer}>
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingIcon}>⭐</Text>
+            <MaterialCommunityIcons name="star" size={FONTS.sm} color={COLORS.warning} style={{ marginRight: SPACING.xs }} />
             <Text style={styles.rating}>{rating}</Text>
           </View>
           <Text style={styles.price}>From ${startingPrice}</Text>
@@ -338,7 +364,7 @@ const styles = StyleSheet.create({
     minHeight: LAYOUT.cardMinHeight,
     position: 'relative',
     overflow: 'hidden',
-    ...SHADOWS.medium,
+    ...SHADOWS.light,
   },
 
   compactContainer: {
@@ -354,7 +380,7 @@ const styles = StyleSheet.create({
   },
 
   featuredContainer: {
-    ...SHADOWS.heavy,
+    ...SHADOWS.medium,
     borderWidth: 0,
     transform: [{ scale: 1.02 }],
   },
@@ -712,6 +738,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+
+  // Loading state
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 120,
   },
 
   // Legacy styles for backward compatibility

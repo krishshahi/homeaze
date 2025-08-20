@@ -1,4 +1,6 @@
 // LocationMap Component - Interactive Map with Providers and Service Areas
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Location from 'expo-location';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -10,8 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import MapView, { Marker, Circle, Polygon, Callout } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const { width, height } = Dimensions.get('window');

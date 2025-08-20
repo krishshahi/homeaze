@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -15,13 +17,12 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import ServiceCard from '../components/ServiceCard';
+
 import CustomButton from '../components/CustomButton';
 import CustomerDashboard from '../components/CustomerDashboard';
-import ProviderDashboard from '../components/ProviderDashboard';
 import NotificationSystem, { NotificationBanner } from '../components/NotificationSystem';
-import ServiceFlowTestButton from '../components/ServiceFlowTestButton';
+import ProviderDashboard from '../components/ProviderDashboard';
+import ServiceCard from '../components/ServiceCard';
 import { 
   COLORS, 
   FONTS, 
@@ -34,7 +35,7 @@ import {
 } from '../constants/theme';
 import { useAppDispatch, useServices, useUser, useDashboard, useAuth } from '../store/hooks';
 import { fetchDashboardData } from '../store/slices/dashboardSlice';
-import { initializeServices } from '../store/slices/servicesSlice';
+import { fetchCategories, fetchFeaturedServices, fetchServices } from '../store/slices/servicesSlice';
 
 const { width, height } = Dimensions.get('window');
 
@@ -49,7 +50,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [bannerNotification, setBannerNotification] = useState(null);
-  const [showSecurityBanner, setShowSecurityBanner] = useState(true);
+  const [showSecurityBanner, setShowSecurityBanner] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -62,75 +63,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const headerOpacity = useRef(new Animated.Value(0)).current;
 
-  // Mock data for enhanced demo
-  const mockServices = [
-    {
-      id: '1',
-      title: 'House Cleaning',
-      icon: '🏠',
-      image: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=300&h=200&fit=crop',
-      description: 'Professional deep cleaning service for your home',
-      rating: 4.8,
-      reviewCount: 234,
-      startingPrice: 75,
-      originalPrice: 100,
-      discount: 25,
-      provider: { name: 'CleanPro Services' },
-      duration: '2-3 hours',
-      availability: 'Today',
-      tags: ['Deep Clean', 'Eco-Friendly'],
-      featured: true,
-    },
-    {
-      id: '2',
-      title: 'Plumbing Repair',
-      icon: '🔧',
-      description: 'Expert plumbing solutions for all your needs',
-      rating: 4.6,
-      reviewCount: 189,
-      startingPrice: 85,
-      provider: { name: 'QuickFix Plumbers' },
-      duration: '1-2 hours',
-      availability: 'Tomorrow',
-      tags: ['Emergency', '24/7'],
-    },
-    {
-      id: '3',
-      title: 'Gardening',
-      icon: '🌱',
-      image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=300&h=200&fit=crop',
-      description: 'Transform your outdoor space with expert care',
-      rating: 4.9,
-      reviewCount: 156,
-      startingPrice: 60,
-      provider: { name: 'Green Thumb Gardens' },
-      duration: '3-4 hours',
-      availability: 'This week',
-      tags: ['Organic', 'Design'],
-    },
-    {
-      id: '4',
-      title: 'Electrical Work',
-      icon: '⚡',
-      description: 'Safe and reliable electrical services',
-      rating: 4.7,
-      reviewCount: 203,
-      startingPrice: 95,
-      provider: { name: 'PowerUp Electric' },
-      duration: '1-3 hours',
-      availability: 'Today',
-      tags: ['Licensed', 'Insured'],
-      isUnavailable: false,
-    },
-  ];
-
-  const mockCategories = [
-    { id: '1', name: 'Cleaning', icon: '🧽', count: 15 },
-    { id: '2', name: 'Repair', icon: '🔨', count: 23 },
-    { id: '3', name: 'Beauty', icon: '💄', count: 12 },
-    { id: '4', name: 'Fitness', icon: '💪', count: 8 },
-    { id: '5', name: 'Tech', icon: '💻', count: 18 },
-  ];
+  // Removed mock data. Using dynamic data from store via services slice.
 
   // Component mount animation
   useEffect(() => {
@@ -160,27 +93,15 @@ const EnhancedHomeScreen = ({ navigation }) => {
       }),
     ]).start();
 
-    // Initialize data
-    dispatch(initializeServices());
+    // Initialize data dynamically
+    dispatch(fetchCategories());
+    dispatch(fetchFeaturedServices(10));
+    dispatch(fetchServices());
     if (auth.isAuthenticated && auth.token) {
       dispatch(fetchDashboardData());
     }
 
-    // Mock notifications for demo
-    if (user.userType === 'provider') {
-      setTimeout(() => {
-        const mockNotification = {
-          id: '1',
-          type: 'booking_request',
-          title: 'New Booking Request',
-          message: 'You have received a new booking request for House Cleaning',
-          createdAt: new Date().toISOString(),
-          bookingId: 'booking_123',
-        };
-        setBannerNotification(mockNotification);
-        setNotifications([mockNotification]);
-      }, 3000);
-    }
+    // Demo notifications removed to keep app dynamic-only.
   }, [dispatch, auth.isAuthenticated, auth.token, user.userType]);
 
   // Handlers
@@ -215,7 +136,8 @@ const EnhancedHomeScreen = ({ navigation }) => {
     // Implement search logic here
   };
 
-  const filteredServices = mockServices.filter(service => {
+  const sourceServices = featuredServices?.length ? featuredServices : services;
+  const filteredServices = sourceServices.filter(service => {
     const matchesSearch = !searchQuery || 
       service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       service.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -298,7 +220,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const renderQuickAction = (title, icon, onPress, gradient = false) => (
+const renderQuickAction = (title, iconName, onPress, gradient = false) => (
     <TouchableOpacity
       style={styles.quickActionCard}
       onPress={onPress}
@@ -311,12 +233,12 @@ const EnhancedHomeScreen = ({ navigation }) => {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Text style={styles.quickActionIconGradient}>{icon}</Text>
+          <MaterialCommunityIcons name={iconName} size={28} color={COLORS.white} style={{ marginBottom: SPACING.sm }} />
           <Text style={styles.quickActionTitleGradient}>{title}</Text>
         </LinearGradient>
       ) : (
         <>
-          <Text style={styles.quickActionIcon}>{icon}</Text>
+          <MaterialCommunityIcons name={iconName} size={28} style={{ marginBottom: SPACING.sm }} />
           <Text style={styles.quickActionTitle}>{title}</Text>
         </>
       )}
@@ -333,12 +255,6 @@ const EnhancedHomeScreen = ({ navigation }) => {
       
       {/* Enhanced Header */}
       <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
-        <LinearGradient
-          colors={[COLORS.white, COLORS.backgroundSecondary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.headerGradient}
-        />
         
         <View style={styles.headerTop}>
           <View style={styles.greetingContainer}>
@@ -355,7 +271,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
               style={styles.notificationButton}
               onPress={() => setShowNotifications(true)}
             >
-              <Text style={styles.notificationIcon}>🔔</Text>
+              <MaterialCommunityIcons name="bell-outline" size={24} />
               {notifications.length > 0 && (
                 <View style={styles.notificationBadge}>
                   <Text style={styles.notificationBadgeText}>{notifications.length}</Text>
@@ -367,7 +283,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
               style={styles.profileButton}
               onPress={() => navigation.navigate('Profile')}
             >
-              <Text style={styles.profileIcon}>👤</Text>
+              <MaterialCommunityIcons name="account-outline" size={24} />
             </TouchableOpacity>
           </View>
         </View>
@@ -375,7 +291,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
         {/* Enhanced Search Bar */}
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
-            <Text style={styles.searchIcon}>🔍</Text>
+            <MaterialCommunityIcons name="magnify" size={20} color={COLORS.textMuted} style={{ marginRight: SPACING.sm }} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search for services..."
@@ -388,13 +304,13 @@ const EnhancedHomeScreen = ({ navigation }) => {
                 onPress={() => setSearchQuery('')}
                 style={styles.clearButton}
               >
-                <Text style={styles.clearIcon}>✕</Text>
+                <MaterialCommunityIcons name="close" size={18} color={COLORS.textMuted} />
               </TouchableOpacity>
             )}
           </View>
           
           <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterIcon}>⚙️</Text>
+            <MaterialCommunityIcons name="filter-variant" size={20} color={COLORS.white} />
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -407,7 +323,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
             style={styles.securityBannerGradient}
           >
             <View style={styles.securityBannerContent}>
-              <Text style={styles.securityBannerIcon}>🔐</Text>
+              <MaterialCommunityIcons name="shield-lock-outline" size={28} />
               <View style={styles.securityBannerText}>
                 <Text style={styles.securityBannerTitle}>Security Enhancements Available!</Text>
                 <Text style={styles.securityBannerSubtitle}>
@@ -428,7 +344,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
               style={styles.securityBannerClose}
               onPress={() => setShowSecurityBanner(false)}
             >
-              <Text style={styles.securityBannerCloseText}>✕</Text>
+              <MaterialCommunityIcons name="close" size={18} color={COLORS.success} />
             </TouchableOpacity>
           </LinearGradient>
         </Animated.View>
@@ -492,10 +408,9 @@ const EnhancedHomeScreen = ({ navigation }) => {
             </View>
             
             <View style={styles.quickActionsContainer}>
-              {renderQuickAction('Book Service', '📅', () => navigation.navigate('Services'), true)}
-              {renderQuickAction('My Bookings', '📋', () => navigation.navigate('Bookings'))}
-              {renderQuickAction('Favorites', '❤️', () => navigation.navigate('Favorites'))}
-              {renderQuickAction('Support', '💬', () => navigation.navigate('Support'))}
+              {renderQuickAction('Book Service', 'calendar-outline', () => navigation.navigate('Services'), true)}
+              {renderQuickAction('My Bookings', 'clipboard-text-outline', () => navigation.navigate('Bookings'))}
+              {renderQuickAction('Support', 'message-text-outline', () => navigation.navigate('Support'))}
             </View>
           </Animated.View>
         )}
@@ -510,7 +425,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
           </View>
           
           <FlatList
-            data={mockCategories}
+            data={categories || []}
             renderItem={renderCategoryItem}
             keyExtractor={(item) => item.id}
             horizontal
@@ -531,7 +446,7 @@ const EnhancedHomeScreen = ({ navigation }) => {
           </View>
           
           <View style={styles.servicesGrid}>
-            {filteredServices.map((service, index) => (
+            {filteredServices.slice(0, 6).map((service, index) => (
               <ServiceCard
                 key={service.id}
                 title={service.title}
@@ -562,19 +477,6 @@ const EnhancedHomeScreen = ({ navigation }) => {
           </View>
         </Animated.View>
 
-        {/* Demo Button */}
-        <Animated.View style={[styles.demoSection, { opacity: fadeAnim }]}>
-          <CustomButton
-            title="Experience Demo Features"
-            variant="secondary"
-            size="large"
-            fullWidth
-            gradient
-            icon={<Text>🚀</Text>}
-            onPress={() => navigation.navigate('FeaturesDemoScreen')}
-            style={styles.demoButton}
-          />
-        </Animated.View>
       </ScrollView>
       
       {/* Notification System Modal */}
@@ -590,8 +492,6 @@ const EnhancedHomeScreen = ({ navigation }) => {
         }}
       />
       
-      {/* Service Flow Test Button */}
-      <ServiceFlowTestButton />
     </SafeAreaView>
   );
 };
@@ -608,7 +508,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.md,
     position: 'relative',
-    ...SHADOWS.light,
+    ...SHADOWS.subtle,
   },
   
   headerGradient: {

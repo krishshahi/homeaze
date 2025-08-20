@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,10 +11,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SIZES } from '../constants/theme';
+
 import CustomButton from '../components/CustomButton';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { COLORS, FONTS, SIZES } from '../constants/theme';
 
 const EditProfileScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);

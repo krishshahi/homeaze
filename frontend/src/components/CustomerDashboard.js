@@ -1,3 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, CommonActions } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useRef } from 'react';
 import {
   View,
@@ -8,16 +12,14 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { Alert } from 'react-native';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS } from '../constants/theme';
+import { useAppDispatch } from '../store/hooks';
+import { logout } from '../store/slices/authSlice';
+
 import CustomButton from './CustomButton';
 import RecentActivity from './RecentActivity';
-import { Alert } from 'react-native';
-import { useAppDispatch } from '../store/hooks';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation, CommonActions } from '@react-navigation/native';
-import { logout } from '../store/slices/authSlice';
 import UpcomingServices from './UpcomingServices';
 
 const { width } = Dimensions.get('window');

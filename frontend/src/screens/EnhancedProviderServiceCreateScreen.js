@@ -1,3 +1,5 @@
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -12,20 +14,19 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import CustomInput from '../components/CustomInput';
+
 import CustomButton from '../components/CustomButton';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS } from '../constants/theme';
-import { useAppDispatch, useAuth } from '../store/hooks';
+import CustomInput from '../components/CustomInput';
+import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, ANIMATIONS } from '../constants/theme';
+import { providerServicesAPI } from '../services/api';
 import ServicesAPI from '../services/servicesApi';
+import { useAuth } from '../store/hooks';
 
 const { width } = Dimensions.get('window');
 
 const EnhancedProviderServiceCreateScreen = ({ route, navigation }) => {
   const { serviceId } = route.params || {};
   const isEditing = !!serviceId;
-  const dispatch = useAppDispatch();
   const { user } = useAuth();
 
   // Animation refs
@@ -37,6 +38,7 @@ const EnhancedProviderServiceCreateScreen = ({ route, navigation }) => {
     name: '',
     description: '',
     category: '',
+    pricingType: '', // hourly | fixed | quote
     price: '',
     minDuration: '1',
     maxDuration: '8',
@@ -174,22 +176,45 @@ const EnhancedProviderServiceCreateScreen = ({ route, navigation }) => {
     const newErrors = {};
 
     if (step === 1) {
-      if (!formData.name.trim()) {
+      const name = (formData.name || '').trim();
+      const description = (formData.description || '').trim();
+      const category = (formData.category || '').trim().toLowerCase();
+      const allowedCategories = new Set([
+        'cleaning','plumbing','electrical','hvac','painting','carpentry','gardening','pest-control','appliance-repair','handyman','other'
+      ]);
+
+      if (!name) {
         newErrors.name = 'Service name is required';
+      } else if (name.length < 3) {
+        newErrors.name = 'Service name must be at least 3 characters';
       }
-      if (!formData.description.trim()) {
+
+      if (!description) {
         newErrors.description = 'Description is required';
+      } else if (description.length < 10) {
+        newErrors.description = 'Description must be at least 10 characters';
       }
-      if (!formData.category) {
+
+      if (!category) {
         newErrors.category = 'Please select a category';
+      } else if (!allowedCategories.has(category)) {
+        newErrors.category = 'Please choose a valid category';
       }
     }
 
     if (step === 2) {
-      const price = parseFloat(formData.price);
-      if (!price || price <= 0) {
-        newErrors.price = 'Please enter a valid price';
+      // Price is only required for hourly/fixed pricing; allow empty for quote-based services
+      const hasPrice = (formData.price ?? '') !== '';
+      const pricingType = (formData.pricingType || '').toLowerCase();
+      const requiresPrice = pricingType === 'hourly' || pricingType === 'fixed' || (!pricingType && hasPrice);
+
+      if (requiresPrice) {
+        const price = parseFloat(formData.price);
+        if (!Number.isFinite(price) || price <= 0) {
+          newErrors.price = 'Please enter a valid price';
+        }
       }
+
       if (!formData.availability) {
         newErrors.availability = 'Please select availability';
       }
@@ -228,10 +253,11 @@ const EnhancedProviderServiceCreateScreen = ({ route, navigation }) => {
         name: formData.name.trim(),
         description: formData.description.trim(),
         category: formData.category,
+        pricingType: (formData.pricingType || '').toLowerCase(),
         icon: selectedIcon,
         price: parseFloat(formData.price),
-        minDuration: parseInt(formData.minDuration) || 1,
-        maxDuration: parseInt(formData.maxDuration) || 8,
+        minDuration: parseInt(formData.minDuration, 10) || 1,
+        maxDuration: parseInt(formData.maxDuration, 10) || 8,
         availability: formData.availability,
         location: formData.location.trim() || 'Service area',
         features: formData.features,
@@ -240,6 +266,43 @@ const EnhancedProviderServiceCreateScreen = ({ route, navigation }) => {
         providerId: user?.id,
         status: 'pending', // Services need approval
       };
+
+      let apiResponse;
+      if (isEditing) {
+        apiResponse = await providerServicesAPI.updateService(serviceId, serviceData);
+      } else {
+        apiResponse = await providerServicesAPI.addService(serviceData);
+      }
+
+      if (apiResponse?.success === false) {
+        throw new Error(apiResponse?.error?.message || 'Request failed');
+      }
+
+      // Try to extract the created/updated service for optimistic update
+      const created = apiResponse?.data?.service || apiResponse?.service || apiResponse?.data || null;
+      const newServiceParam = created ? {
+        id: created.id || created._id,
+        name: created.name || created.title || serviceData.name,
+        description: created.description || serviceData.description,
+        category: created.category || serviceData.category,
+        icon: created.icon || serviceData.icon,
+        price: created.pricing?.amount ?? created.price ?? serviceData.price ?? 0,
+        status: created.status || (created.isActive ? 'active' : 'inactive') || 'inactive',
+        isActive: created.isActive ?? (created.status === 'active'),
+        createdAt: created.createdAt || new Date().toISOString(),
+        features: created.features || serviceData.features || [],
+      } : null;
+
+      Alert.alert('Success', `Service ${isEditing ? 'updated' : 'created'} successfully`, [
+        { 
+          text: 'OK', 
+          onPress: () => navigation.navigate('ProviderServicesMain', { 
+            refresh: Date.now(), 
+            ...(newServiceParam ? { newService: newServiceParam } : {}),
+            toast: isEditing ? 'Service updated' : 'Service created'
+          }) 
+        }
+      ]);
 
       if (isEditing) {
         await ServicesAPI.updateService(serviceId, serviceData);
@@ -311,7 +374,7 @@ const EnhancedProviderServiceCreateScreen = ({ route, navigation }) => {
 
               <View style={styles.inputContainer}>
                 <CustomInput
-                  label="Service Name *"
+                  label={`Service Name * (${(formData.name || '').length}/60)`}
                   value={formData.name}
                   onChangeText={(value) => updateFormData('name', value)}
                   placeholder="e.g., Professional House Cleaning"
@@ -323,7 +386,7 @@ const EnhancedProviderServiceCreateScreen = ({ route, navigation }) => {
 
               <View style={styles.inputContainer}>
                 <CustomInput
-                  label="Description *"
+                  label={`Description * (${(formData.description || '').length}/300)`}
                   value={formData.description}
                   onChangeText={(value) => updateFormData('description', value)}
                   placeholder="Describe your service in detail..."
@@ -385,16 +448,38 @@ const EnhancedProviderServiceCreateScreen = ({ route, navigation }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>💰 Pricing & Availability</Text>
 
+              {/* Pricing Type Selector */}
+              <View style={styles.pricingTypeRow}>
+                {['hourly','fixed','quote'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.pricingTypeButton,
+                      formData.pricingType === type && styles.pricingTypeButtonActive
+                    ]}
+                    onPress={() => updateFormData('pricingType', type)}
+                  >
+                    <Text style={[
+                      styles.pricingTypeText,
+                      formData.pricingType === type && styles.pricingTypeTextActive
+                    ]}>
+                      {type === 'hourly' ? 'Hourly' : type === 'fixed' ? 'Fixed' : 'Quote'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
               <View style={styles.inputRow}>
                 <View style={[styles.inputContainer, { flex: 1 }]}>
                   <CustomInput
-                    label="Price per Hour *"
+                    label={`${formData.pricingType === 'fixed' ? 'Fixed Price' : 'Price per Hour'} ${formData.pricingType === 'quote' ? '(N/A for Quote)' : '*'}`}
                     value={formData.price}
                     onChangeText={(value) => updateFormData('price', value)}
-                    placeholder="25.00"
+                    placeholder={formData.pricingType === 'fixed' ? '120.00' : '25.00'}
                     variant="outlined"
                     keyboardType="numeric"
                     leftIcon={<Text style={styles.currencySymbol}>$</Text>}
+                    editable={formData.pricingType !== 'quote'}
                     error={errors.price}
                   />
                 </View>
@@ -700,6 +785,30 @@ const styles = StyleSheet.create({
   },
 
   // Content
+  pricingTypeRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  pricingTypeButton: {
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.white,
+  },
+  pricingTypeButtonActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '15',
+  },
+  pricingTypeText: {
+    color: COLORS.textPrimary,
+    fontWeight: FONTS.weightSemiBold,
+  },
+  pricingTypeTextActive: {
+    color: COLORS.primary,
+  },
   scrollContent: {
     flex: 1,
   },

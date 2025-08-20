@@ -1,3 +1,5 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ActivityIndicator, Platform } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,10 +12,13 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
-import { useAppDispatch, useAuth } from '../store/hooks';
 import BookingsAPI from '../services/bookingsApi';
 import ServicesAPI from '../services/servicesApi';
+import { useAppDispatch, useAuth, useDashboard } from '../store/hooks';
+import { fetchDashboardData } from '../store/slices/dashboardSlice';
+import Toast from 'react-native-toast-message';
 
 const CustomerDashboardScreen = ({ navigation }) => {
   const dispatch = useAppDispatch();
@@ -32,16 +37,29 @@ const CustomerDashboardScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Pull dashboard data from Redux slice as the primary dynamic source
+  const dashboard = useDashboard();
+
   useEffect(() => {
-    loadDashboardData();
+    // Kick off Redux-driven dashboard fetch first
+    dispatch(fetchDashboardData())
+      .unwrap()
+      .catch(() => {
+        // ignore error here; we'll still attempt local API fallback below
+      })
+      .finally(() => {
+        // Also run local fallback to populate popular services/recent bookings if dashboard API is limited
+        loadDashboardData();
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDashboardData = async () => {
     try {
-      console.log('📊 Loading customer dashboard data...');
+      console.log('Loading customer dashboard data...');
       setLoading(true);
       
-      // Load multiple API endpoints
+      // Load multiple API endpoints (fallbacks augment Redux data)
       const [bookingsResponse, servicesResponse] = await Promise.all([
         BookingsAPI.getCustomerBookings().catch(() => ({ bookings: [] })),
         ServicesAPI.getPopularServices().catch(() => ({ services: [] })),
@@ -50,30 +68,49 @@ const CustomerDashboardScreen = ({ navigation }) => {
       const bookings = Array.isArray(bookingsResponse) ? bookingsResponse : bookingsResponse.bookings || [];
       const services = Array.isArray(servicesResponse) ? servicesResponse : servicesResponse.services || [];
 
-      // Calculate stats
-      const stats = {
+      // Prefer Redux dashboard stats when available; compute lightweight stats as fallback/augment
+      const computedStats = {
         totalBookings: bookings.length,
         activeBookings: bookings.filter(b => ['pending', 'confirmed', 'in-progress'].includes(b.status)).length,
         completedBookings: bookings.filter(b => b.status === 'completed').length,
       };
 
+      const stats = {
+        totalBookings: dashboard?.stats?.totalBookings ?? computedStats.totalBookings,
+        activeBookings: dashboard?.stats?.activeBookings ?? computedStats.activeBookings,
+        completedBookings: dashboard?.stats?.completedServices ?? computedStats.completedBookings,
+      };
+
       setDashboardData({
-        recentBookings: bookings.slice(0, 3),
+        recentBookings: (dashboard?.recentBookings && dashboard.recentBookings.length > 0)
+          ? dashboard.recentBookings.slice(0, 3)
+          : bookings.slice(0, 3),
         popularServices: services.slice(0, 4),
         stats,
       });
 
       console.log('✅ Dashboard data loaded successfully');
+      Toast.show({ type: 'success', text1: 'Dashboard updated' });
 
     } catch (error) {
-      console.error('❌ Error loading dashboard data:', error);
+      console.error('Error loading dashboard data:', error);
+      Toast.show({ type: 'error', text1: 'Failed to refresh dashboard' });
       
-      // Use mock data as fallback
+      // Fallback to any Redux dashboard data if present; otherwise empty
       setDashboardData({
-        recentBookings: mockRecentBookings,
-        popularServices: mockPopularServices,
-        stats: mockStats,
+        recentBookings: (dashboard?.recentBookings || []).slice(0, 3),
+        popularServices: [],
+        stats: {
+          totalBookings: dashboard?.stats?.totalBookings || 0,
+          activeBookings: dashboard?.stats?.activeBookings || 0,
+          completedBookings: dashboard?.stats?.completedServices || 0,
+        },
       });
+      // Optional: show success toast
+      if (Platform.OS === 'android') {
+        // Lightweight success feedback without extra deps
+        console.log('Customer dashboard refreshed successfully');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -96,14 +133,14 @@ const CustomerDashboardScreen = ({ navigation }) => {
     }
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusIconName = (status) => {
     switch (status) {
-      case 'pending': return '⏳';
-      case 'confirmed': return '✅';
-      case 'in-progress': return '🔄';
-      case 'completed': return '🎉';
-      case 'cancelled': return '❌';
-      default: return '📋';
+      case 'pending': return 'timer-sand';
+      case 'confirmed': return 'check-circle-outline';
+      case 'in-progress': return 'progress-clock';
+      case 'completed': return 'check-decagram';
+      case 'cancelled': return 'close-circle-outline';
+      default: return 'clipboard-text-outline';
     }
   };
 
@@ -126,13 +163,13 @@ const CustomerDashboardScreen = ({ navigation }) => {
 
   const renderQuickActions = () => (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>🚀 Quick Actions</Text>
+      <Text style={styles.sectionTitle}><MaterialCommunityIcons name="rocket-launch-outline" /> Quick Actions</Text>
       <View style={styles.quickActionsContainer}>
         <TouchableOpacity 
           style={styles.quickActionButton}
           onPress={() => navigation.navigate('Services')}
         >
-          <Text style={styles.quickActionIcon}>🔍</Text>
+          <MaterialCommunityIcons name="magnify" size={32} style={{ marginBottom: SPACING.sm }} />
           <Text style={styles.quickActionText}>Browse Services</Text>
         </TouchableOpacity>
         
@@ -140,7 +177,7 @@ const CustomerDashboardScreen = ({ navigation }) => {
           style={styles.quickActionButton}
           onPress={() => navigation.navigate('Bookings')}
         >
-          <Text style={styles.quickActionIcon}>📅</Text>
+          <MaterialCommunityIcons name="calendar-outline" size={32} style={{ marginBottom: SPACING.sm }} />
           <Text style={styles.quickActionText}>My Bookings</Text>
         </TouchableOpacity>
         
@@ -148,7 +185,7 @@ const CustomerDashboardScreen = ({ navigation }) => {
           style={styles.quickActionButton}
           onPress={() => navigation.navigate('Providers')}
         >
-          <Text style={styles.quickActionIcon}>👥</Text>
+          <MaterialCommunityIcons name="account-group-outline" size={32} style={{ marginBottom: SPACING.sm }} />
           <Text style={styles.quickActionText}>Find Providers</Text>
         </TouchableOpacity>
         
@@ -156,7 +193,7 @@ const CustomerDashboardScreen = ({ navigation }) => {
           style={styles.quickActionButton}
           onPress={() => navigation.navigate('Profile')}
         >
-          <Text style={styles.quickActionIcon}>⚙️</Text>
+          <MaterialCommunityIcons name="cog-outline" size={32} style={{ marginBottom: SPACING.sm }} />
           <Text style={styles.quickActionText}>Settings</Text>
         </TouchableOpacity>
       </View>
@@ -166,7 +203,7 @@ const CustomerDashboardScreen = ({ navigation }) => {
   const renderRecentBookings = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>📋 Recent Bookings</Text>
+        <Text style={styles.sectionTitle}><MaterialCommunityIcons name="clipboard-text-outline" /> Recent Bookings</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Bookings')}>
           <Text style={styles.sectionAction}>View All</Text>
         </TouchableOpacity>
@@ -174,7 +211,7 @@ const CustomerDashboardScreen = ({ navigation }) => {
 
       {dashboardData.recentBookings.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateIcon}>📋</Text>
+          <MaterialCommunityIcons name="clipboard-text-outline" size={48} style={styles.emptyStateIcon} />
           <Text style={styles.emptyStateTitle}>No bookings yet</Text>
           <Text style={styles.emptyStateSubtitle}>
             Start by browsing our available services
@@ -206,7 +243,7 @@ const CustomerDashboardScreen = ({ navigation }) => {
                 </View>
                 
                 <View style={[styles.statusBadge, { backgroundColor: getStatusColor(booking.status) + '20' }]}>
-                  <Text style={styles.statusIcon}>{getStatusIcon(booking.status)}</Text>
+                  <MaterialCommunityIcons name={getStatusIconName(booking.status)} size={FONTS.sm} style={{ marginRight: SPACING.xs }} />
                   <Text style={[styles.statusText, { color: getStatusColor(booking.status) }]}>
                     {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                   </Text>
@@ -214,10 +251,8 @@ const CustomerDashboardScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.bookingDetails}>
-                <Text style={styles.bookingDate}>
-                  📅 {new Date(booking.scheduledDate).toLocaleDateString()}
-                </Text>
-                <Text style={styles.bookingPrice}>💰 ${booking.totalCost}</Text>
+                <Text style={styles.bookingDate}><MaterialCommunityIcons name="calendar-outline" /> {new Date(booking.scheduledDate).toLocaleDateString()}</Text>
+                <Text style={styles.bookingPrice}><MaterialCommunityIcons name="cash" /> ${booking.totalCost}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -229,7 +264,7 @@ const CustomerDashboardScreen = ({ navigation }) => {
   const renderPopularServices = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>⭐ Popular Services</Text>
+        <Text style={styles.sectionTitle}><MaterialCommunityIcons name="star-outline" /> Popular Services</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Services')}>
           <Text style={styles.sectionAction}>View All</Text>
         </TouchableOpacity>
@@ -242,12 +277,12 @@ const CustomerDashboardScreen = ({ navigation }) => {
             style={styles.serviceCard}
             onPress={() => navigation.navigate('ServiceDetails', { serviceId: item.id })}
           >
-            <Text style={styles.serviceIcon}>{item.icon || '🏠'}</Text>
+            <MaterialCommunityIcons name={(item.icon && typeof item.icon === 'string' ? item.icon : 'home-outline')} size={40} style={{ marginBottom: SPACING.sm }} />
             <View style={styles.serviceInfo}>
               <Text style={styles.serviceName}>{item.name}</Text>
               <Text style={styles.serviceCategory}>{item.category}</Text>
               <View style={styles.serviceRating}>
-                <Text style={styles.ratingText}>⭐ {item.rating || '5.0'}</Text>
+                <Text style={styles.ratingText}><MaterialCommunityIcons name="star" /> {item.rating || '5.0'}</Text>
                 <Text style={styles.servicePrice}>From ${item.price}</Text>
               </View>
             </View>
@@ -261,6 +296,60 @@ const CustomerDashboardScreen = ({ navigation }) => {
     </View>
   );
 
+  const renderUpcomingServices = () => {
+    const upcoming = (dashboard?.upcomingServices || []).slice(0, 3);
+    if (!upcoming.length) return null;
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}><MaterialCommunityIcons name="clock-outline" /> Upcoming Services</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Bookings')}>
+            <Text style={styles.sectionAction}>View All</Text>
+          </TouchableOpacity>
+        </View>
+        {upcoming.map(item => (
+          <View key={item.id} style={styles.bookingCard}>
+            <View style={styles.bookingHeader}>
+              <View style={styles.bookingService}>
+                <Text style={styles.bookingServiceIcon}>{item.serviceIcon || '🏠'}</Text>
+                <View style={styles.bookingServiceInfo}>
+                  <Text style={styles.bookingServiceTitle}>{item.serviceTitle}</Text>
+                  <Text style={styles.bookingProvider}>with {item.providerName || 'Provider'}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.bookingDetails}>
+              <Text style={styles.bookingDate}><MaterialCommunityIcons name="calendar-outline" /> {new Date(item.scheduledDate).toLocaleDateString()} {item.scheduledTime ? `• ${item.scheduledTime}` : ''}</Text>
+              {item.location ? <Text style={styles.bookingPrice}><MaterialCommunityIcons name="map-marker-outline" /> {item.location}</Text> : null}
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderRecentActivity = () => {
+    const activity = (dashboard?.recentActivity || []).slice(0, 5);
+    if (!activity.length) return null;
+    return (
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}><MaterialCommunityIcons name="history" /> Recent Activity</Text>
+        </View>
+        {activity.map(evt => (
+          <View key={evt.id} style={[styles.bookingCard, { flexDirection: 'row', alignItems: 'center' }] }>
+            <Text style={[styles.bookingServiceIcon, { marginRight: SPACING.md }]}>{evt.icon || '📋'}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.bookingServiceTitle}>{evt.title}</Text>
+              <Text style={styles.bookingProvider}>{evt.description}</Text>
+            </View>
+            <Text style={styles.bookingDate}>{new Date(evt.timestamp).toLocaleDateString()}</Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
@@ -268,14 +357,14 @@ const CustomerDashboardScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerGreeting}>Hello, {user?.name || 'User'}! 👋</Text>
+          <Text style={styles.headerGreeting}>Hello, {user?.name || 'User'}! <MaterialCommunityIcons name="hand-wave" /></Text>
           <Text style={styles.headerSubtitle}>What can we help you with today?</Text>
         </View>
         <TouchableOpacity 
           style={styles.notificationButton}
           onPress={() => navigation.navigate('Notifications')}
         >
-          <Text style={styles.notificationIcon}>🔔</Text>
+          <MaterialCommunityIcons name="bell-outline" size={FONTS.lg} />
         </TouchableOpacity>
       </View>
 
@@ -286,16 +375,52 @@ const CustomerDashboardScreen = ({ navigation }) => {
         }
       >
         {/* Stats Cards */}
-        {renderStatsCard()}
+        {loading ? (
+          <View style={[styles.section, { alignItems: 'center' }]}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          </View>
+        ) : (
+          renderStatsCard()
+        )}
 
         {/* Quick Actions */}
         {renderQuickActions()}
 
         {/* Recent Bookings */}
-        {renderRecentBookings()}
+        {loading ? (
+          <View style={[styles.section, { alignItems: 'center' }]}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          </View>
+        ) : (
+          renderRecentBookings()
+        )}
 
         {/* Popular Services */}
-        {renderPopularServices()}
+        {loading ? (
+          <View style={[styles.section, { alignItems: 'center' }]}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          </View>
+        ) : (
+          renderPopularServices()
+        )}
+
+        {/* Upcoming Services */}
+        {loading ? (
+          <View style={[styles.section, { alignItems: 'center' }]}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          </View>
+        ) : (
+          renderUpcomingServices()
+        )}
+
+        {/* Recent Activity */}
+        {loading ? (
+          <View style={[styles.section, { alignItems: 'center' }]}>
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          </View>
+        ) : (
+          renderRecentActivity()
+        )}
 
         <View style={styles.bottomSpacing} />
       </ScrollView>

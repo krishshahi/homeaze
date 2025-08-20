@@ -12,8 +12,9 @@ import {
   Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import SecurityAPI from '../services/securityApi';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import SecurityAPI from '../services/securityApi';
 
 const { width } = Dimensions.get('window');
 

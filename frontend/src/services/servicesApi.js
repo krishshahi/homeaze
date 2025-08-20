@@ -1,7 +1,7 @@
 // Services API service
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 class ServicesAPI {
   /**
@@ -10,7 +10,7 @@ class ServicesAPI {
    */
   static async getAuthHeaders() {
     try {
-      const token = await AsyncStorage.getItem('userToken');
+      const token = (await AsyncStorage.getItem('token')) || (await AsyncStorage.getItem('userToken'));
       return {
         'Content-Type': 'application/json',
         'Authorization': token ? `Bearer ${token}` : '',
@@ -206,8 +206,42 @@ class ServicesAPI {
   static async getProviderServices() {
     try {
       const headers = await this.getAuthHeaders();
-      
-      const response = await fetch(`${API_BASE_URL}/services/provider`, {
+
+      // Try current provider profile (singular route)
+      let providerId = null;
+      try {
+        const profileRes = await fetch(`${API_BASE_URL}/provider/profile`, {
+          method: 'GET',
+          headers,
+        });
+        const profileData = await profileRes.json();
+        if (profileRes.ok) {
+          providerId = profileData?.data?._id || profileData?.data?.user?._id || profileData?.profile?._id || profileData?._id || null;
+        }
+      } catch (_) {
+        // ignore and try fallbacks
+      }
+
+      // Fallback 1: decode userId from JWT in storage
+      if (!providerId) {
+        try {
+          const token = (await AsyncStorage.getItem('token')) || (await AsyncStorage.getItem('userToken')) || (await AsyncStorage.getItem('authToken'));
+          if (token) {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(decodeBase64Url(parts[1]));
+              providerId = payload?.userId || payload?._id || null;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!providerId) {
+        throw new Error('Unable to determine provider ID');
+      }
+
+      // Now load services for this provider
+      const response = await fetch(`${API_BASE_URL}/providers/${providerId}/services`, {
         method: 'GET',
         headers,
       });
@@ -277,6 +311,23 @@ class ServicesAPI {
       throw error;
     }
   }
+}
+
+// Helper: base64url decode to string
+function decodeBase64Url(input) {
+  try {
+    const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64.padEnd(base64.length + (4 - (base64.length % 4)) % 4, '=');
+    if (typeof atob === 'function') {
+      const decoded = atob(padded);
+      try { return decodeURIComponent(escape(decoded)); } catch { return decoded; }
+    }
+    // Fallback using Buffer if available
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(padded, 'base64').toString('utf-8');
+    }
+  } catch (_) {}
+  return '';
 }
 
 export default ServicesAPI;

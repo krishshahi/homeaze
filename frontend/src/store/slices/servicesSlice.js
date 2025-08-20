@@ -1,14 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import ServicesAPI from '../../services/servicesApi';
 
 const initialState = {
   services: [],
-  categories: [
-    { id: '1', title: 'Cleaning', icon: '🧹', color: '#1E88E5' },
-    { id: '2', title: 'Repairs', icon: '🔧', color: '#FF6B35' },
-    { id: '3', title: 'Garden', icon: '🌱', color: '#4CAF50' },
-    { id: '4', title: 'Electric', icon: '⚡', color: '#FF9800' },
-  ],
+  categories: [],
   featuredServices: [],
   searchResults: [],
   filters: {
@@ -32,8 +28,7 @@ export const fetchServices = createAsyncThunk(
       return response;
     } catch (error) {
       console.error('❌ Error fetching services:', error);
-      // Fallback to mock data if API fails
-      return mockServices;
+      return rejectWithValue(error.message || 'Failed to fetch services');
     }
   }
 );
@@ -48,8 +43,7 @@ export const fetchFeaturedServices = createAsyncThunk(
       return response;
     } catch (error) {
       console.error('❌ Error fetching featured services:', error);
-      // Fallback to mock data if API fails
-      return mockServices.filter(service => service.featured);
+      return rejectWithValue(error.message || 'Failed to fetch featured services');
     }
   }
 );
@@ -64,13 +58,7 @@ export const fetchCategories = createAsyncThunk(
       return response;
     } catch (error) {
       console.error('❌ Error fetching categories:', error);
-      // Return existing categories as fallback
-      return [
-        { id: '1', title: 'Cleaning', icon: '🧹', color: '#1E88E5' },
-        { id: '2', title: 'Repairs', icon: '🔧', color: '#FF6B35' },
-        { id: '3', title: 'Garden', icon: '🌱', color: '#4CAF50' },
-        { id: '4', title: 'Electric', icon: '⚡', color: '#FF9800' },
-      ];
+      return rejectWithValue(error.message || 'Failed to fetch categories');
     }
   }
 );
@@ -85,99 +73,40 @@ export const searchServices = createAsyncThunk(
       return response;
     } catch (error) {
       console.error('❌ Error searching services:', error);
-      // Fallback to local search in mock data
-      const filteredServices = mockServices.filter(service => 
-        service.title.toLowerCase().includes(query.toLowerCase()) ||
-        service.description.toLowerCase().includes(query.toLowerCase())
-      );
-      return filteredServices;
+      return rejectWithValue(error.message || 'Failed to search services');
     }
   }
 );
 
-// Mock services data
-const mockServices = [
-  {
-    id: '1',
-    title: 'House Cleaning',
-    icon: '🧹',
-    description: 'Professional cleaning services for your home',
-    rating: 4.8,
-    startingPrice: 50,
-    featured: true,
-    category: 'cleaning',
-    provider: {
-      id: 'p1',
-      name: 'CleanPro Services',
-      avatar: null,
-      rating: 4.9,
-      reviewCount: 156,
-    },
-    images: [],
-    services: ['Deep cleaning', 'Regular cleaning', 'Move-in/out cleaning'],
-    availability: 'Available today',
-  },
-  {
-    id: '2',
-    title: 'Plumbing',
-    icon: '🔧',
-    description: 'Expert plumbing repairs and installations',
-    rating: 4.7,
-    startingPrice: 80,
-    featured: false,
-    category: 'repairs',
-    provider: {
-      id: 'p2',
-      name: 'FixIt Plumbing',
-      avatar: null,
-      rating: 4.8,
-      reviewCount: 89,
-    },
-    images: [],
-    services: ['Leak repair', 'Pipe installation', 'Drain cleaning'],
-    availability: 'Available tomorrow',
-  },
-  {
-    id: '3',
-    title: 'Electrical',
-    icon: '⚡',
-    description: 'Licensed electricians for all electrical needs',
-    rating: 4.9,
-    startingPrice: 90,
-    featured: true,
-    category: 'electric',
-    provider: {
-      id: 'p3',
-      name: 'PowerUp Electric',
-      avatar: null,
-      rating: 4.9,
-      reviewCount: 234,
-    },
-    images: [],
-    services: ['Wiring', 'Outlet installation', 'Circuit breaker repair'],
-    availability: 'Available today',
-  },
-  {
-    id: '4',
-    title: 'Gardening',
-    icon: '🌱',
-    description: 'Lawn care and garden maintenance',
-    rating: 4.6,
-    startingPrice: 40,
-    featured: false,
-    category: 'garden',
-    provider: {
-      id: 'p4',
-      name: 'Green Thumb Gardens',
-      avatar: null,
-      rating: 4.7,
-      reviewCount: 67,
-    },
-    images: [],
-    services: ['Lawn mowing', 'Tree trimming', 'Garden design'],
-    availability: 'Available this week',
-  },
-];
+// Removed mock services data to keep project fully dynamic
+
+// Helper to extract an array of services from various API shapes
+const extractServicesArray = (payload) => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.services)) return payload.services;
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.data?.services)) return payload.data.services;
+  return [];
+};
+
+// Normalize a service object for the UI
+const normalizeService = (s) => ({
+  id: s.id || s._id,
+  title: s.title || s.name || 'Service',
+  description: s.description || s.details || '',
+  category: s.category || s.categoryId || s.type || 'other',
+  icon: s.icon || s.emoji || '🏠',
+  startingPrice: s.startingPrice ?? s.price ?? s.pricing?.amount ?? s.basePrice ?? 0,
+  price: s.price ?? s.pricing?.amount ?? s.basePrice ?? s.startingPrice ?? 0,
+  rating: s.rating?.average ?? s.rating ?? s.averageRating ?? 0,
+  featured: !!(s.featured || s.isFeatured),
+  provider: s.provider || s.providerName || s.providerId?.providerProfile?.businessName || s.providerId?.name,
+  availability: s.availability || s.schedule || null,
+  tags: s.tags || s.labels || [],
+  bookingsCount: s.bookingsCount || 0,
+  createdAt: s.createdAt || null,
+});
 
 const servicesSlice = createSlice({
   name: 'services',
@@ -209,30 +138,24 @@ const servicesSlice = createSlice({
     clearError(state) {
       state.error = null;
     },
-    // Initialize with mock data (deprecated - use fetchServices instead)
-    initializeServices(state) {
-      state.services = mockServices;
-      state.featuredServices = mockServices.filter(service => service.featured);
-      state.loading = false;
-    },
   },
   extraReducers: (builder) => {
-    // Fetch Services
     builder
+      // Fetch Services
       .addCase(fetchServices.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchServices.fulfilled, (state, action) => {
         state.loading = false;
-        state.services = Array.isArray(action.payload) ? action.payload : action.payload.services || [];
+        const raw = extractServicesArray(action.payload);
+        state.services = raw.map(normalizeService);
         state.error = null;
       })
       .addCase(fetchServices.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
-        // Use mock data as fallback
-        state.services = mockServices;
+        state.services = [];
       })
       // Fetch Featured Services
       .addCase(fetchFeaturedServices.pending, (state) => {
@@ -241,14 +164,14 @@ const servicesSlice = createSlice({
       })
       .addCase(fetchFeaturedServices.fulfilled, (state, action) => {
         state.loading = false;
-        state.featuredServices = Array.isArray(action.payload) ? action.payload : action.payload.services || [];
+        const raw = extractServicesArray(action.payload);
+        state.featuredServices = raw.map(normalizeService);
         state.error = null;
       })
       .addCase(fetchFeaturedServices.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
-        // Use mock data as fallback
-        state.featuredServices = mockServices.filter(service => service.featured);
+        state.featuredServices = [];
       })
       // Fetch Categories
       .addCase(fetchCategories.pending, (state) => {
@@ -257,13 +180,15 @@ const servicesSlice = createSlice({
       })
       .addCase(fetchCategories.fulfilled, (state, action) => {
         state.loading = false;
-        state.categories = Array.isArray(action.payload) ? action.payload : action.payload.categories || state.categories;
+        const categories = Array.isArray(action.payload)
+          ? action.payload
+          : (action.payload?.categories || action.payload?.data?.categories || state.categories);
+        state.categories = categories;
         state.error = null;
       })
       .addCase(fetchCategories.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || action.error.message;
-        // Keep existing categories as fallback
       })
       // Search Services
       .addCase(searchServices.pending, (state) => {
@@ -272,7 +197,8 @@ const servicesSlice = createSlice({
       })
       .addCase(searchServices.fulfilled, (state, action) => {
         state.loading = false;
-        state.searchResults = Array.isArray(action.payload) ? action.payload : action.payload.services || [];
+        const raw = extractServicesArray(action.payload);
+        state.searchResults = raw.map(normalizeService);
         state.error = null;
       })
       .addCase(searchServices.rejected, (state, action) => {
@@ -292,7 +218,6 @@ export const {
   setLoading,
   setError,
   clearError,
-  initializeServices,
 } = servicesSlice.actions;
 
 export default servicesSlice.reducer;

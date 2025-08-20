@@ -1,4 +1,6 @@
 // ProviderCard Component - Enhanced Provider Display
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
   View,
@@ -9,7 +11,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const ProviderCard = ({
@@ -327,12 +329,11 @@ const ProviderCard = ({
             style={styles.favoriteButton}
             onPress={handleFavoritePress}
           >
-            <Text style={[
-              styles.favoriteIcon,
-              { color: isFavorite ? COLORS.error : COLORS.textMuted }
-            ]}>
-              {isFavorite ? '❤️' : '🤍'}
-            </Text>
+            <MaterialCommunityIcons
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={24}
+              color={isFavorite ? COLORS.error : COLORS.textMuted}
+            />
           </TouchableOpacity>
         </View>
 
@@ -368,21 +369,27 @@ const ProviderCard = ({
               style={[styles.actionButton, styles.messageButton]}
               onPress={() => onMessagePress && onMessagePress(provider)}
             >
-              <Text style={styles.messageButtonText}>💬 Message</Text>
+              <Text style={styles.messageButtonText}>
+                <MaterialCommunityIcons name="message-text-outline" /> Message
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionButton, styles.callButton]}
               onPress={handleCallPress}
             >
-              <Text style={styles.callButtonText}>📞 Call</Text>
+              <Text style={styles.callButtonText}>
+                <MaterialCommunityIcons name="phone-outline" /> Call
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.actionButton, styles.quoteButton]}
               onPress={() => onRequestQuote && onRequestQuote(provider)}
             >
-              <Text style={styles.quoteButtonText}>💼 Quote</Text>
+              <Text style={styles.quoteButtonText}>
+                <MaterialCommunityIcons name="briefcase-outline" /> Quote
+              </Text>
             </TouchableOpacity>
           </View>
         )}
@@ -404,7 +411,7 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.md,
     marginVertical: SPACING.sm,
     borderRadius: BORDER_RADIUS.lg,
-    ...SHADOWS.medium,
+    ...SHADOWS.light,
   },
   compactContainer: {
     marginVertical: SPACING.xs,
@@ -569,7 +576,7 @@ const styles = StyleSheet.create({
   description: {
     fontSize: FONTS.sm,
     color: COLORS.textSecondary,
-    lineHeight: FONTS.sm * 1.4,
+    lineHeight: FONTS.sm * FONTS.lineHeightNormal,
     marginBottom: SPACING.sm,
   },
   serviceTagsContainer: {

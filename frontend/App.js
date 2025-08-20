@@ -1,21 +1,22 @@
-import React, { useEffect, useRef } from 'react';
 import { NavigationContainer, CommonActions } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
+import React, { useEffect, useRef } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Provider, useSelector, useDispatch } from 'react-redux';
-import { store } from './src/store';
-import { loadStoredAuth } from './src/store/slices/authSlice';
+
 
 // Import screens
-import WelcomeScreen from './src/screens/WelcomeScreen';
-import LoginScreen from './src/screens/LoginScreen';
-import SignUpScreen from './src/screens/SignUpScreen';
-import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
-import UserTypeSelectorScreen from './src/screens/UserTypeSelectorScreen';
 import MainNavigator from './src/navigation/MainNavigator';
 import ProviderNavigator from './src/navigation/ProviderNavigator';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
+import LoginScreen from './src/screens/LoginScreen';
+import SignUpScreen from './src/screens/SignUpScreen';
+import UserTypeSelectorScreen from './src/screens/UserTypeSelectorScreen';
+import WelcomeScreen from './src/screens/WelcomeScreen';
+import { store } from './src/store';
+import { loadStoredAuth } from './src/store/slices/authSlice';
 
 const Stack = createStackNavigator();
 

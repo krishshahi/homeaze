@@ -7,6 +7,7 @@ import {
   Animated,
   Platform,
 } from 'react-native';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const EnhancedTabBar = ({ state, descriptors, navigation }) => {
@@ -21,6 +22,11 @@ const EnhancedTabBar = ({ state, descriptors, navigation }) => {
               : options.title !== undefined
               ? options.title
               : route.name;
+
+          // Support an optional badge count via screen options.
+          // Use either options.tabBarBadgeCount or options.tabBarBadge (if numeric).
+          const rawBadge = options.tabBarBadgeCount ?? options.tabBarBadge;
+          const badgeCount = typeof rawBadge === 'number' ? rawBadge : undefined;
 
           const isFocused = state.index === index;
 
@@ -121,10 +127,10 @@ const EnhancedTabBar = ({ state, descriptors, navigation }) => {
                 {label}
               </Text>
 
-              {/* Notification Badge - Example for specific tabs */}
-              {(route.name === 'Bookings' || route.name === 'Dashboard') && (
+              {/* Notification Badge - render only when a positive numeric badgeCount is provided */}
+              {typeof badgeCount === 'number' && badgeCount > 0 && (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>3</Text>
+                  <Text style={styles.badgeText}>{badgeCount}</Text>
                 </View>
               )}
             </TouchableOpacity>

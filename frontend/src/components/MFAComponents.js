@@ -1,3 +1,6 @@
+import * as Clipboard from 'expo-clipboard';
+import * as LocalAuthentication from 'expo-local-authentication';
+import * as SecureStore from 'expo-secure-store';
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -12,11 +15,9 @@ import {
   Dimensions,
   Share
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as SecureStore from 'expo-secure-store';
-import * as LocalAuthentication from 'expo-local-authentication';
-import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 
 const { width } = Dimensions.get('window');

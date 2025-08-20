@@ -1,6 +1,7 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { apiPost, API_ENDPOINTS } from '../../config/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
+import { apiPost, API_ENDPOINTS } from '../../config/api';
 
 // Async thunks for API calls
 export const loginUser = createAsyncThunk(

@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import {
   View,
@@ -8,10 +9,10 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import CustomButton from '../components/CustomButton';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import { useAppDispatch, useAuth } from '../store/hooks';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const UserTypeSelectorScreen = ({ navigation }) => {
   const dispatch = useAppDispatch();

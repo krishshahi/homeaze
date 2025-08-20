@@ -8,41 +8,79 @@ import {
   StatusBar,
   Image,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import CustomButton from '../components/CustomButton';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
+import { servicesAPI } from '../services/api';
 import { useAppDispatch, useServices } from '../store/hooks';
 
 const ServiceDetailsScreen = ({ navigation, route }) => {
   const dispatch = useAppDispatch();
   const { services } = useServices();
-  const { serviceId } = route.params;
+  const { serviceId: routeServiceId, service: routeService } = route.params || {};
+  const serviceId = routeService?.id || routeServiceId;
   
-  const [service, setService] = useState(null);
+  const [service, setService] = useState(routeService || null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [activeTab, setActiveTab] = useState('overview');
+  const [loading, setLoading] = useState(!routeService && !!serviceId);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Find service by ID
-    const foundService = services.find(s => s.id === serviceId);
+    if (service) return; // already set from route
+    if (!serviceId) return;
+    const foundService = services.find((s) => (s.id || s._id) === serviceId);
     if (foundService) {
       setService(foundService);
+      setLoading(false);
+      return;
     }
-  }, [serviceId, services]);
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await servicesAPI.getServiceDetails(serviceId);
+        const data = res?.data || res;
+        setService({
+          id: data.id || data._id,
+          title: data.title || data.name,
+          description: data.description || '',
+          startingPrice: data.startingPrice || data.price || 0,
+          rating: data.rating || 5,
+          featured: !!data.featured,
+          availability: data.availability || 'Available',
+          icon: data.icon || '🧰',
+          provider: data.provider || { id: data.providerId, name: data.providerName || 'Provider', rating: data.providerRating || 5, reviewCount: data.providerReviewCount || 0 },
+          services: data.includedServices || data.services || [],
+        });
+      } catch (e) {
+        console.error('Failed to fetch service details', e);
+        setError('Failed to load service details');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [serviceId, services, service]);
 
-  if (!service) {
+  if (loading || !service) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading service details...</Text>
+          {error ? (
+            <Text style={styles.loadingText}>{error}</Text>
+          ) : (
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          )}
         </View>
       </SafeAreaView>
     );
   }
 
   const handleBookService = () => {
-    navigation.navigate('BookingFlow', { serviceId: service.id });
+    navigation.navigate('BookingForm', { service: { id: service.id, name: service.title, provider: service.provider, price: service.startingPrice } });
   };
 
   const handleProviderPress = () => {

@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import { fetchUserProfile, updateUserProfile, updateProviderProfile, updateCustomerPreferences, uploadAvatar } from '../../services/profileApi';
 
 // Async thunks for profile operations

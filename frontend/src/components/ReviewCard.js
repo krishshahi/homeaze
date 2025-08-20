@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
+
 import RatingStars from './RatingStars';
 
 const ReviewCard = ({ review }) => {
@@ -39,8 +41,9 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
   },
   comment: {
-    fontSize: FONTS.sm,
+    fontSize: FONTS.body1,
     color: COLORS.textSecondary,
+    lineHeight: FONTS.body1 * FONTS.lineHeightNormal,
     marginBottom: SPACING.md,
   },
   footer: {

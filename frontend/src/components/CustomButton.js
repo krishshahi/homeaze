@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
   TouchableOpacity,
@@ -7,7 +8,7 @@ import {
   Animated,
   View,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS, VARIANTS } from '../constants/theme';
 
 const CustomButton = ({
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     position: 'relative',
     overflow: 'hidden',
-    ...SHADOWS.medium,
+    ...SHADOWS.subtle,
   },
 
   buttonWrapper: {
@@ -371,20 +372,20 @@ const styles = StyleSheet.create({
   // Variant styles
   primaryButton: {
     backgroundColor: COLORS.primary,
-    ...SHADOWS.medium,
+    ...SHADOWS.light,
   },
 
   primaryGradientButton: {
-    ...SHADOWS.heavy,
+    ...SHADOWS.medium,
   },
 
   secondaryButton: {
     backgroundColor: COLORS.secondary,
-    ...SHADOWS.medium,
+    ...SHADOWS.light,
   },
 
   secondaryGradientButton: {
-    ...SHADOWS.heavy,
+    ...SHADOWS.medium,
   },
 
   tertiaryButton: {
@@ -394,9 +395,9 @@ const styles = StyleSheet.create({
 
   outlineButton: {
     backgroundColor: COLORS.white,
-    borderWidth: 2,
-    borderColor: COLORS.primary,
-    ...SHADOWS.light,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    ...SHADOWS.subtle,
   },
 
   ghostButton: {
@@ -406,12 +407,12 @@ const styles = StyleSheet.create({
 
   dangerButton: {
     backgroundColor: COLORS.error,
-    ...SHADOWS.medium,
+    ...SHADOWS.light,
   },
 
   successButton: {
     backgroundColor: COLORS.success,
-    ...SHADOWS.medium,
+    ...SHADOWS.light,
   },
 
   // Size styles
@@ -426,6 +427,7 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.md,
     paddingHorizontal: SPACING.lg,
     minHeight: LAYOUT.buttonMinHeight,
+    borderRadius: BORDER_RADIUS.md,
   },
 
   largeButton: {

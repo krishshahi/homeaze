@@ -11,11 +11,12 @@ import {
   RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { MFASetupScreen, PasswordStrengthIndicator } from '../components/MFAComponents';
 import { ActiveSessionsScreen, SecurityDashboard } from '../components/SessionManagement';
 import { ConnectedAccountsScreen } from '../components/SocialAuth';
-import SecurityAPI from '../services/securityApi';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import SecurityAPI from '../services/securityApi';
 import { useAppSelector } from '../store/hooks';
 
 const SecuritySettingsScreen = ({ navigation }) => {

@@ -771,8 +771,8 @@ const generateBookingHistory = async (customers, providers, services, count) => 
           instructions: getRandomElement(['Ring doorbell', 'Call upon arrival', 'Side entrance', 'Apt 3B'])
         },
         coordinates: {
-          latitude: customer.address.coordinates.coordinates[1],
-          longitude: customer.address.coordinates.coordinates[0]
+          latitude: (customer.address && customer.address.coordinates && Array.isArray(customer.address.coordinates.coordinates)) ? customer.address.coordinates.coordinates[1] : 0,
+          longitude: (customer.address && customer.address.coordinates && Array.isArray(customer.address.coordinates.coordinates)) ? customer.address.coordinates.coordinates[0] : 0
         }
       },
       serviceRequirements: {
@@ -958,8 +958,8 @@ const generateUpcomingBookings = async (customers, providers, services, count) =
           instructions: getRandomElement(['Ring doorbell', 'Call upon arrival', 'Side entrance', 'Apt 3B'])
         },
         coordinates: {
-          latitude: customer.address.coordinates.coordinates[1],
-          longitude: customer.address.coordinates.coordinates[0]
+          latitude: (customer.address && customer.address.coordinates && Array.isArray(customer.address.coordinates.coordinates)) ? customer.address.coordinates.coordinates[1] : 0,
+          longitude: (customer.address && customer.address.coordinates && Array.isArray(customer.address.coordinates.coordinates)) ? customer.address.coordinates.coordinates[0] : 0
         }
       },
       serviceRequirements: {

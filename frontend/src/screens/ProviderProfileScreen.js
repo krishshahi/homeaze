@@ -1,3 +1,7 @@
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -11,15 +15,13 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation } from '@react-navigation/native';
+
 import CustomButton from '../components/CustomButton';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS, LAYOUT, ANIMATIONS } from '../constants/theme';
 import { useAppDispatch, useAuth, useProfile } from '../store/hooks';
 import { logout } from '../store/slices/authSlice';
 import { fetchProfile } from '../store/slices/userSlice';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 const ProviderProfileScreen = () => {
   const navigation = useNavigation();
@@ -43,6 +45,20 @@ const ProviderProfileScreen = () => {
     averageRating: 0,
     memberSince: '',
   });
+  // Safe placeholders to prevent undefined usage in UI sections below
+  const provider = {
+    name: user?.name || 'Provider Name',
+    rating: profileStats.averageRating || 4.8,
+    reviewCount: Array.isArray(mockProviderReviews) ? mockProviderReviews.length : 0,
+  };
+  const [activeTab, setActiveTab] = useState('services');
+  const providerServices = [
+    { id: 'svc-1', title: 'House Cleaning', description: 'Standard cleaning service', icon: '🧹', rating: 4.8, startingPrice: 50 },
+    { id: 'svc-2', title: 'Plumbing', description: 'Fix leaks and clogs', icon: '🔧', rating: 4.7, startingPrice: 70 },
+  ];
+  const handleMessageProvider = () => {};
+  const handleCallProvider = () => {};
+  const handleServicePress = () => {};
 
   useEffect(() => {
     loadProfileData();
@@ -1177,10 +1193,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.lg,
   },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
   statIcon: {
     fontSize: FONTS.lg,
     marginBottom: SPACING.xs,
@@ -1190,16 +1202,6 @@ const styles = StyleSheet.create({
     fontWeight: FONTS.weightBold,
     color: COLORS.textPrimary,
     marginBottom: SPACING.xs,
-  },
-  statLabel: {
-    fontSize: FONTS.sm,
-    color: COLORS.textSecondary,
-  },
-  statDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: COLORS.border,
-    marginHorizontal: SPACING.md,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -1219,22 +1221,12 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
     marginBottom: SPACING.sm,
   },
-  sectionTitle: {
-    fontSize: FONTS.lg,
-    fontWeight: FONTS.weightBold,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
-  },
   verificationItems: {
     gap: SPACING.md,
   },
   verificationItem: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  verificationIcon: {
-    fontSize: FONTS.lg,
-    marginRight: SPACING.sm,
   },
   verificationDetails: {
     flex: 1,

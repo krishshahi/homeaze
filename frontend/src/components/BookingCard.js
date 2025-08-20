@@ -1,4 +1,6 @@
 // BookingCard Component - Display Booking Information with Actions
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import {
   View,
@@ -9,7 +11,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 
 const BookingCard = ({
@@ -231,9 +233,7 @@ const BookingCard = ({
                   colors={[COLORS.primary, COLORS.primary + 'CC']}
                   style={styles.serviceIconFallback}
                 >
-                  <Text style={styles.serviceIconText}>
-                    {booking.service?.icon || '🔧'}
-                  </Text>
+              <MaterialCommunityIcons name="wrench" size={24} />
                 </LinearGradient>
               )}
             </View>
@@ -250,12 +250,12 @@ const BookingCard = ({
               
               {/* Time information */}
               <Text style={styles.scheduleText}>
-                📅 {formatDateTime(booking.scheduledDate)}
+                <MaterialCommunityIcons name="calendar-outline" /> {formatDateTime(booking.scheduledDate)}
               </Text>
               
               {timeUntil && booking.status !== 'completed' && booking.status !== 'cancelled' && (
-                <Text style={styles.timeUntilText}>
-                  ⏰ {timeUntil}
+              <Text style={styles.timeUntilText}>
+                  <MaterialCommunityIcons name="clock-outline" /> {timeUntil}
                 </Text>
               )}
             </View>
@@ -379,7 +379,7 @@ const BookingCard = ({
                 onPress={() => onMessagePress && onMessagePress(booking)}
                 disabled={actionLoading.message}
               >
-                <Text style={styles.messageButtonText}>💬</Text>
+                <MaterialCommunityIcons name="message-text-outline" size={16} />
               </TouchableOpacity>
 
               {/* Call */}
@@ -388,7 +388,7 @@ const BookingCard = ({
                 onPress={() => onCallPress ? onCallPress(booking) : handleCall()}
                 disabled={actionLoading.call}
               >
-                <Text style={styles.callButtonText}>📞</Text>
+                <MaterialCommunityIcons name="phone-outline" size={16} />
               </TouchableOpacity>
 
               {/* Status-specific actions */}
@@ -398,7 +398,7 @@ const BookingCard = ({
                   onPress={() => handleActionWithLoading('confirm', () => onStatusChange && onStatusChange(booking, 'confirmed'))}
                   disabled={actionLoading.confirm}
                 >
-                  <Text style={styles.confirmButtonText}>✅ Confirm</Text>
+                  <Text style={styles.confirmButtonText}><MaterialCommunityIcons name="check-circle-outline" /> Confirm</Text>
                 </TouchableOpacity>
               )}
 
@@ -408,7 +408,7 @@ const BookingCard = ({
                   onPress={() => handleActionWithLoading('start', () => onStatusChange && onStatusChange(booking, 'in_progress'))}
                   disabled={actionLoading.start}
                 >
-                  <Text style={styles.startButtonText}>▶️ Start</Text>
+                  <Text style={styles.startButtonText}><MaterialCommunityIcons name="play-circle-outline" /> Start</Text>
                 </TouchableOpacity>
               )}
 
@@ -418,7 +418,7 @@ const BookingCard = ({
                   onPress={() => handleActionWithLoading('complete', onCompletePress)}
                   disabled={actionLoading.complete}
                 >
-                  <Text style={styles.completeButtonText}>✅ Complete</Text>
+                  <Text style={styles.completeButtonText}><MaterialCommunityIcons name="check-bold" /> Complete</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -431,14 +431,14 @@ const BookingCard = ({
                     style={styles.secondaryButton}
                     onPress={() => onReschedulePress && onReschedulePress(booking)}
                   >
-                    <Text style={styles.secondaryButtonText}>📅 Reschedule</Text>
+                    <Text style={styles.secondaryButtonText}><MaterialCommunityIcons name="calendar-edit" /> Reschedule</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
                     style={styles.secondaryButton}
                     onPress={handleCancel}
                   >
-                    <Text style={[styles.secondaryButtonText, { color: COLORS.error }]}>❌ Cancel</Text>
+                    <Text style={[styles.secondaryButtonText, { color: COLORS.error }]}><MaterialCommunityIcons name="close-circle-outline" /> Cancel</Text>
                   </TouchableOpacity>
                 </>
               ) : booking.status === 'in_progress' && onTrackPress ? (
@@ -446,7 +446,7 @@ const BookingCard = ({
                   style={styles.secondaryButton}
                   onPress={() => onTrackPress(booking)}
                 >
-                  <Text style={styles.secondaryButtonText}>📍 Track</Text>
+                  <Text style={styles.secondaryButtonText}><MaterialCommunityIcons name="map-marker-outline" /> Track</Text>
                 </TouchableOpacity>
               ) : null}
               
@@ -455,7 +455,7 @@ const BookingCard = ({
                   style={styles.secondaryButton}
                   onPress={() => onViewDetailsPress(booking)}
                 >
-                  <Text style={styles.secondaryButtonText}>👁️ Details</Text>
+                  <Text style={styles.secondaryButtonText}><MaterialCommunityIcons name="eye-outline" /> Details</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.lg,
-    ...SHADOWS.medium,
+    ...SHADOWS.light,
     position: 'relative',
   },
   header: {
@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
   descriptionText: {
     fontSize: FONTS.sm,
     color: COLORS.textSecondary,
-    lineHeight: FONTS.sm * 1.4,
+    lineHeight: FONTS.sm * FONTS.lineHeightNormal,
   },
   notesContainer: {
     marginBottom: SPACING.sm,
