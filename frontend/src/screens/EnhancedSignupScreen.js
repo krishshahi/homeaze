@@ -16,7 +16,8 @@ import CustomButton from '../components/CustomButton';
 import CustomInput from '../components/CustomInput';
 import Text from '../components/Text';
 import { COLORS, SPACING, LAYOUT, FONTS, BORDER_RADIUS, SHADOWS } from '../constants/theme';
-import { useAuth } from '../contexts/AuthContext';
+import { useDispatch } from 'react-redux';
+import { registerUser } from '../store/slices/authSlice';
 
 // Components
 
@@ -26,12 +27,13 @@ const EnhancedSignupScreen = ({ navigation }) => {
     lastName: '',
     email: '',
     phone: '',
+    address: '',
     password: '',
     confirmPassword: '',
     userType: 'customer', // 'customer' or 'provider'
   });
   const [loading, setLoading] = useState(false);
-  const { signup } = useAuth();
+  const dispatch = useDispatch();
 
   const updateFormData = (key, value) => {
     setFormData(prev => ({ ...prev, [key]: value }));
@@ -43,6 +45,7 @@ const EnhancedSignupScreen = ({ navigation }) => {
     if (!formData.lastName) errors.push('Last name is required');
     if (!formData.email) errors.push('Email is required');
     if (!formData.phone) errors.push('Phone number is required');
+    if (!formData.address) errors.push('Address is required');
     if (!formData.password) errors.push('Password is required');
     if (formData.password !== formData.confirmPassword) {
       errors.push('Passwords do not match');
@@ -66,14 +69,24 @@ const EnhancedSignupScreen = ({ navigation }) => {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         phone: formData.phone,
+        address: formData.address,
         password: formData.password,
         userType: formData.userType,
       };
 
-      const result = await signup(userData);
-      if (!result.success) {
-        Alert.alert('Error', result.error);
-      }
+      const result = await dispatch(registerUser(userData)).unwrap();
+      
+      console.log('Signup successful:', result);
+      Alert.alert(
+        'Account Created',
+        'Your account has been created successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
     } catch (error) {
       Alert.alert('Error', 'Failed to sign up. Please try again.');
     } finally {
@@ -84,8 +97,8 @@ const EnhancedSignupScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 50 : 0}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <LinearGradient
         colors={[COLORS.primary, COLORS.primaryDark]}
@@ -94,6 +107,7 @@ const EnhancedSignupScreen = ({ navigation }) => {
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.header}>
             <Text variant="h1" color={COLORS.white} weight="bold">
@@ -105,7 +119,8 @@ const EnhancedSignupScreen = ({ navigation }) => {
           </View>
 
           <Card variant="default" style={styles.card}>
-            <View style={styles.form}>
+<View style={styles.form}>
+              {/* User Type Selection */}
               <View style={styles.userTypeContainer}>
                 <TouchableOpacity
                   style={[
@@ -147,57 +162,78 @@ const EnhancedSignupScreen = ({ navigation }) => {
               </View>
 
               <View style={styles.row}>
+                <View style={styles.nameInputContainer}>
+                  <CustomInput
+                    label="First Name"
+                    placeholder="Enter first name"
+                    value={formData.firstName}
+                    onChangeText={(value) => updateFormData('firstName', value)}
+                  />
+                </View>
+                <View style={styles.nameInputContainer}>
+                  <CustomInput
+                    label="Last Name"
+                    placeholder="Enter last name"
+                    value={formData.lastName}
+                    onChangeText={(value) => updateFormData('lastName', value)}
+                  />
+                </View>
+              </View>
+
+<View style={styles.inputGroup}>
                 <CustomInput
-                  label="First Name"
-                  placeholder="Enter first name"
-                  value={formData.firstName}
-                  onChangeText={(value) => updateFormData('firstName', value)}
-                  style={styles.rowInput}
-                />
-                <CustomInput
-                  label="Last Name"
-                  placeholder="Enter last name"
-                  value={formData.lastName}
-                  onChangeText={(value) => updateFormData('lastName', value)}
-                  style={styles.rowInput}
+                  label="Email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChangeText={(value) => updateFormData('email', value)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
                 />
               </View>
 
-              <CustomInput
-                label="Email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChangeText={(value) => updateFormData('email', value)}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-              />
+<View style={styles.inputGroup}>
+                <CustomInput
+                  label="Phone"
+                  placeholder="Enter phone number"
+                  value={formData.phone}
+                  onChangeText={(value) => updateFormData('phone', value)}
+                  keyboardType="phone-pad"
+                />
+              </View>
 
-              <CustomInput
-                label="Phone"
-                placeholder="Enter phone number"
-                value={formData.phone}
-                onChangeText={(value) => updateFormData('phone', value)}
-                keyboardType="phone-pad"
-              />
+<View style={styles.inputGroup}>
+                <CustomInput
+                  label="Address"
+                  placeholder="Enter your address"
+                  value={formData.address}
+                  onChangeText={(value) => updateFormData('address', value)}
+                  multiline
+                  numberOfLines={2}
+                />
+              </View>
 
-              <CustomInput
-                label="Password"
-                placeholder="Create password"
-                value={formData.password}
-                onChangeText={(value) => updateFormData('password', value)}
-                secureTextEntry
-                showPasswordToggle
-              />
+<View style={styles.inputGroup}>
+                <CustomInput
+                  label="Password"
+                  placeholder="Create password"
+                  value={formData.password}
+                  onChangeText={(value) => updateFormData('password', value)}
+                  secureTextEntry
+                  showPasswordToggle
+                />
+              </View>
 
-              <CustomInput
-                label="Confirm Password"
-                placeholder="Confirm password"
-                value={formData.confirmPassword}
-                onChangeText={(value) => updateFormData('confirmPassword', value)}
-                secureTextEntry
-                showPasswordToggle
-              />
+<View style={styles.inputGroup}>
+                <CustomInput
+                  label="Confirm Password"
+                  placeholder="Confirm password"
+                  value={formData.confirmPassword}
+                  onChangeText={(value) => updateFormData('confirmPassword', value)}
+                  secureTextEntry
+                  showPasswordToggle
+                />
+              </View>
 
               <CustomButton
                 title="Sign Up"
@@ -233,12 +269,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     padding: SPACING.lg,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginBottom: SPACING.xl,
+    marginBottom: SPACING.lg,
+    paddingTop: SPACING.md,
   },
   subtitle: {
     marginTop: SPACING.xs,
@@ -248,12 +287,13 @@ const styles = StyleSheet.create({
     padding: SPACING.lg,
   },
   form: {
-    gap: SPACING.md,
+    marginVertical: SPACING.md,
   },
   userTypeContainer: {
     flexDirection: 'row',
     gap: SPACING.sm,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.lg,
+    marginTop: SPACING.sm,
   },
   userTypeButton: {
     flex: 1,
@@ -273,10 +313,16 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    gap: SPACING.md,
+    justifyContent: 'space-between',
+    marginBottom: SPACING.md,
+  },
+  nameInputContainer: {
+    flex: 0.48, // Each container takes up 48% of width, leaving 4% for gap
+    minWidth: 120, // Ensure minimum width for readability
   },
   rowInput: {
-    flex: 1,
+    flex: 0.48, // Each input takes up 48% of width, leaving 4% for gap
+    minWidth: 120, // Ensure minimum width for readability
   },
   signupButton: {
     marginTop: SPACING.md,
@@ -286,6 +332,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: SPACING.xl,
+    marginBottom: SPACING.xl,
+  },
+  inputGroup: {
+    marginBottom: SPACING.md,
   },
 });
 

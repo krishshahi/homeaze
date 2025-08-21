@@ -170,12 +170,7 @@ const SignUpScreen = ({ navigation }) => {
         phone: formData.phone,
         password: formData.password,
         userType: formData.userType,
-        address: {
-          street: formData.street,
-          city: formData.city,
-          state: formData.state,
-          zipCode: formData.zipCode,
-        }
+        address: `${formData.street}, ${formData.city}, ${formData.state} ${formData.zipCode}`
       };
 
       const result = await dispatch(registerUser(userData)).unwrap();

@@ -13,7 +13,7 @@ import MainNavigator from './src/navigation/MainNavigator';
 import ProviderNavigator from './src/navigation/ProviderNavigator';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import SimpleLoginScreen from './src/screens/SimpleLoginScreen';
-import SimpleSignupScreen from './src/screens/SimpleSignupScreen';
+import EnhancedSignupScreen from './src/screens/EnhancedSignupScreen';
 import UserTypeSelectorScreen from './src/screens/UserTypeSelectorScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import { store } from './src/store';
@@ -115,7 +115,7 @@ function AppNavigator() {
         {/* Always include all screens, but control initial route */}
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Login" component={SimpleLoginScreen} />
-        <Stack.Screen name="Signup" component={SimpleSignupScreen} />
+        <Stack.Screen name="Signup" component={EnhancedSignupScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="UserTypeSelector" component={UserTypeSelectorScreen} />
         <Stack.Screen name="Main" component={MainNavigator} />

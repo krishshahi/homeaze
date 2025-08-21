@@ -6,7 +6,7 @@
 // Option 2: Your computer's IP (works for physical device on same network)
 // Option 3: Expo tunnel (works for any device)
 export const API_BASE_URL = __DEV__ 
-  ? 'http://192.168.1.129:3001/api'  // Development server (use your computer's IP for device access)
+  ? 'http://192.168.43.180:3001/api'  // Development server (use your computer's IP for device access)
   : 'https://your-production-api-url.com/api'; // Production server
 
 // Standard token storage key
